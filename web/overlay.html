@@ -737,7 +737,8 @@ function useClip(name){
 
 /* which drawing is on stage, and which pose it holds */
 function setPose(pose){
-  const view = VIEW[pose] || "side";
+  // before the exercise starts, pose is null — still stand in the view the exercise will use
+  const view = VIEW[pose || DATA.pose] || "side";
   document.querySelectorAll(".goose").forEach(g => {
     const base = g.id === "chrFront" ? "goose front" : "goose side";
     const mine = g.id === (view === "front" ? "chrFront" : "chrSide");
@@ -774,8 +775,6 @@ function render(){
 
   // the goose waits with you: neutral stance in the pose's own view, no exercise yet
   setPose(null);
-  const view = VIEW[DATA.pose] || "side";
-  document.getElementById(view === "front" ? "chrFront" : "chrSide").classList.add("active");
   useClip("idle");
   setState("idle");
 }
