@@ -20,6 +20,7 @@ cp "$ROOT/web/overlay.html"     "$RES/overlay.html"
 cp "$ROOT/data/exercises.json"  "$RES/exercises.json"
 cp "$ROOT/art/icon/Potyagus.icns" "$RES/Potyagus.icns"
 [ -d "$ROOT/web/clips" ] && cp -R "$ROOT/web/clips" "$RES/clips"
+[ -d "$ROOT/web/sfx" ]   && cp -R "$ROOT/web/sfx"   "$RES/sfx"
 
 cat > "$APP/Contents/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>

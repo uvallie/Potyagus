@@ -890,8 +890,20 @@ function honkOnce(t0, f0, len, drop){
   o1.connect(bp); o2.connect(o2g); o2g.connect(bp); bp.connect(g); g.connect(actx.destination);
   o1.start(t0); o2.start(t0); o1.stop(t0+len+0.02); o2.stop(t0+len+0.02);
 }
+/* v0.2: справжній гусак. Семпли вирізані з аудіодоріжки, яку MiniMax згенерував до кліпу
+   «дотягнись» (v2/audio/reach.m4a). Синтез нижче лишається запасним, якщо файл не програється. */
+const SFX = { hello: "sfx/honk.m4a", done: "sfx/honk-burst.m4a", grunt: "sfx/honk.m4a" };
 function honk(kind){
   if (DATA.muted) return;
+  const src = SFX[kind] || SFX.grunt;
+  try{
+    const a = new Audio(src); a.volume = 0.9;
+    const p = a.play();
+    if (p && p.catch) p.catch(() => honkSynth(kind)); else return;
+    return;
+  }catch(e){ honkSynth(kind); }
+}
+function honkSynth(kind){
   try{
     actx = actx || new (window.AudioContext || window.webkitAudioContext)();
     const t = actx.currentTime + 0.02;
