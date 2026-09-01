@@ -1,0 +1,4 @@
+Flat minimal 2D vector illustration animation, exactly the same white goose as in the reference image,
+camera completely static. Keep the exact flat style: solid cream-white body, light grey wing(s), orange beak
+and legs, tiny dot eye(s), no outlines, no shading, no gradients, no feather texture, flat solid green
+background identical to the reference, no other objects, character identical throughout.

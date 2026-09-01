@@ -1,0 +1,311 @@
+[
+  {
+    "pose": "idle",
+    "name": "Очікування (idle)",
+    "view": "3q",
+    "start_end_frame": "neutral-3q",
+    "status": "done",
+    "model": "seedance_2_5",
+    "params": {
+      "mode": "omni_reference",
+      "duration": 6,
+      "resolution": "720p",
+      "aspect_ratio": "1:1",
+      "generate_audio": false,
+      "declined_preset_id": "24bae836-2c4a-48e0-89b6-49fcc0b21612"
+    },
+    "prompt_file": "v2/prompts/idle.txt",
+    "clip": "v2/clips/idle.mp4"
+  },
+  {
+    "pose": "reach",
+    "name": "Дотягнись до стелі",
+    "view": "side",
+    "start_end_frame": "neutral-side",
+    "status": "done",
+    "model": "seedance_2_5",
+    "params": {
+      "mode": "omni_reference",
+      "duration": 6,
+      "resolution": "720p",
+      "aspect_ratio": "1:1",
+      "generate_audio": false,
+      "declined_preset_id": "24bae836-2c4a-48e0-89b6-49fcc0b21612"
+    },
+    "prompt_file": "v2/prompts/reach.txt",
+    "clip": "v2/clips/reach.mp4"
+  },
+  {
+    "pose": "chest",
+    "name": "Розкрий груди",
+    "view": "3q",
+    "start_end_frame": "neutral-3q",
+    "status": "done",
+    "model": "seedance_2_5",
+    "params": {
+      "mode": "omni_reference",
+      "duration": 6,
+      "resolution": "720p",
+      "aspect_ratio": "1:1",
+      "generate_audio": false,
+      "declined_preset_id": "24bae836-2c4a-48e0-89b6-49fcc0b21612"
+    },
+    "prompt_file": "v2/prompts/chest.txt",
+    "clip": "v2/clips/chest.mp4"
+  },
+  {
+    "pose": "neck",
+    "name": "Шия: вухо до плеча",
+    "view": "front",
+    "start_end_frame": "neutral-front",
+    "status": "todo",
+    "model": "seedance_2_5",
+    "params": {
+      "mode": "omni_reference",
+      "duration": 6,
+      "resolution": "720p",
+      "aspect_ratio": "1:1",
+      "generate_audio": false,
+      "declined_preset_id": "24bae836-2c4a-48e0-89b6-49fcc0b21612"
+    },
+    "prompt": "Flat minimal 2D vector illustration animation, exactly the same white goose as in the reference image, front view, facing the camera, camera completely static. The goose tilts its head slowly so one ear drops toward one shoulder, holds, comes back up through center, then tilts to the other shoulder, holds, then slowly returns to exactly the same relaxed standing pose it started in so the clip loops seamlessly. Keep the exact flat style: solid cream-white body, light grey wing(s), orange beak and legs, tiny dot eye(s), no outlines, no shading, no gradients, no feather texture, flat solid green background identical to the reference, no other objects, character identical throughout."
+  },
+  {
+    "pose": "neckroll",
+    "name": "Півкола головою",
+    "view": "front",
+    "start_end_frame": "neutral-front",
+    "status": "todo",
+    "model": "seedance_2_5",
+    "params": {
+      "mode": "omni_reference",
+      "duration": 6,
+      "resolution": "720p",
+      "aspect_ratio": "1:1",
+      "generate_audio": false,
+      "declined_preset_id": "24bae836-2c4a-48e0-89b6-49fcc0b21612"
+    },
+    "prompt": "Flat minimal 2D vector illustration animation, exactly the same white goose as in the reference image, front view, facing the camera, camera completely static. The goose drops its chin toward its chest, then rolls its head slowly along the bottom arc from one shoulder to the other and back, never going over the top, then slowly returns to exactly the same relaxed standing pose it started in so the clip loops seamlessly. Keep the exact flat style: solid cream-white body, light grey wing(s), orange beak and legs, tiny dot eye(s), no outlines, no shading, no gradients, no feather texture, flat solid green background identical to the reference, no other objects, character identical throughout."
+  },
+  {
+    "pose": "chintuck",
+    "name": "Підборіддя назад",
+    "view": "side",
+    "start_end_frame": "neutral-side",
+    "status": "todo",
+    "model": "seedance_2_5",
+    "params": {
+      "mode": "omni_reference",
+      "duration": 6,
+      "resolution": "720p",
+      "aspect_ratio": "1:1",
+      "generate_audio": false,
+      "declined_preset_id": "24bae836-2c4a-48e0-89b6-49fcc0b21612"
+    },
+    "prompt": "Flat minimal 2D vector illustration animation, exactly the same white goose as in the reference image, side profile view, camera completely static. The goose keeps its eyes level and glides its head straight back so the chin tucks in, holds a moment, releases forward, repeats twice, then slowly returns to exactly the same relaxed standing pose it started in so the clip loops seamlessly. Keep the exact flat style: solid cream-white body, light grey wing(s), orange beak and legs, tiny dot eye(s), no outlines, no shading, no gradients, no feather texture, flat solid green background identical to the reference, no other objects, character identical throughout."
+  },
+  {
+    "pose": "eyes",
+    "name": "Правило 20-20-20",
+    "view": "side",
+    "start_end_frame": "neutral-side",
+    "status": "todo",
+    "model": "seedance_2_5",
+    "params": {
+      "mode": "omni_reference",
+      "duration": 6,
+      "resolution": "720p",
+      "aspect_ratio": "1:1",
+      "generate_audio": false,
+      "declined_preset_id": "24bae836-2c4a-48e0-89b6-49fcc0b21612"
+    },
+    "prompt": "Flat minimal 2D vector illustration animation, exactly the same white goose as in the reference image, side profile view, camera completely static. The goose lifts its head high, stretches its neck up and forward and gazes far into the distance, slowly panning its gaze from one side to the other, blinking slowly, then slowly returns to exactly the same relaxed standing pose it started in so the clip loops seamlessly. Keep the exact flat style: solid cream-white body, light grey wing(s), orange beak and legs, tiny dot eye(s), no outlines, no shading, no gradients, no feather texture, flat solid green background identical to the reference, no other objects, character identical throughout."
+  },
+  {
+    "pose": "sidebend",
+    "name": "Бічний нахил",
+    "view": "front",
+    "start_end_frame": "neutral-front",
+    "status": "todo",
+    "model": "seedance_2_5",
+    "params": {
+      "mode": "omni_reference",
+      "duration": 6,
+      "resolution": "720p",
+      "aspect_ratio": "1:1",
+      "generate_audio": false,
+      "declined_preset_id": "24bae836-2c4a-48e0-89b6-49fcc0b21612"
+    },
+    "prompt": "Flat minimal 2D vector illustration animation, exactly the same white goose as in the reference image, front view, facing the camera, camera completely static. The goose raises one wing straight over its head and bends its whole body sideways toward the opposite side, holds, returns, then the other side, then slowly returns to exactly the same relaxed standing pose it started in so the clip loops seamlessly. Keep the exact flat style: solid cream-white body, light grey wing(s), orange beak and legs, tiny dot eye(s), no outlines, no shading, no gradients, no feather texture, flat solid green background identical to the reference, no other objects, character identical throughout."
+  },
+  {
+    "pose": "backbend",
+    "name": "Прогин назад",
+    "view": "side",
+    "start_end_frame": "neutral-side",
+    "status": "todo",
+    "model": "seedance_2_5",
+    "params": {
+      "mode": "omni_reference",
+      "duration": 6,
+      "resolution": "720p",
+      "aspect_ratio": "1:1",
+      "generate_audio": false,
+      "declined_preset_id": "24bae836-2c4a-48e0-89b6-49fcc0b21612"
+    },
+    "prompt": "Flat minimal 2D vector illustration animation, exactly the same white goose as in the reference image, side profile view, camera completely static. The goose places both wing tips on its lower back, leans backward opening its chest and lifting its head to look up, holds, returns, then slowly returns to exactly the same relaxed standing pose it started in so the clip loops seamlessly. Keep the exact flat style: solid cream-white body, light grey wing(s), orange beak and legs, tiny dot eye(s), no outlines, no shading, no gradients, no feather texture, flat solid green background identical to the reference, no other objects, character identical throughout."
+  },
+  {
+    "pose": "toes",
+    "name": "Нахил вперед до пальців ніг",
+    "view": "side",
+    "start_end_frame": "neutral-side",
+    "status": "todo",
+    "model": "seedance_2_5",
+    "params": {
+      "mode": "omni_reference",
+      "duration": 6,
+      "resolution": "720p",
+      "aspect_ratio": "1:1",
+      "generate_audio": false,
+      "declined_preset_id": "24bae836-2c4a-48e0-89b6-49fcc0b21612"
+    },
+    "prompt": "Flat minimal 2D vector illustration animation, exactly the same white goose as in the reference image, side profile view, camera completely static. The goose folds forward from the hips, its neck and head hanging down, wing reaching down to touch its own feet, hangs there breathing, then rolls slowly back up, then slowly returns to exactly the same relaxed standing pose it started in so the clip loops seamlessly. Keep the exact flat style: solid cream-white body, light grey wing(s), orange beak and legs, tiny dot eye(s), no outlines, no shading, no gradients, no feather texture, flat solid green background identical to the reference, no other objects, character identical throughout."
+  },
+  {
+    "pose": "squat",
+    "name": "15 присідань",
+    "view": "front",
+    "start_end_frame": "neutral-front",
+    "status": "todo",
+    "model": "seedance_2_5",
+    "params": {
+      "mode": "omni_reference",
+      "duration": 6,
+      "resolution": "720p",
+      "aspect_ratio": "1:1",
+      "generate_audio": false,
+      "declined_preset_id": "24bae836-2c4a-48e0-89b6-49fcc0b21612"
+    },
+    "prompt": "Flat minimal 2D vector illustration animation, exactly the same white goose as in the reference image, front view, facing the camera, camera completely static. The goose bends both knees and sinks its body straight down into a deep squat, knees pointing outward, wings held forward for balance, then pushes back up, repeats, then slowly returns to exactly the same relaxed standing pose it started in so the clip loops seamlessly. Keep the exact flat style: solid cream-white body, light grey wing(s), orange beak and legs, tiny dot eye(s), no outlines, no shading, no gradients, no feather texture, flat solid green background identical to the reference, no other objects, character identical throughout."
+  },
+  {
+    "pose": "jacks",
+    "name": "Стрибки «зірочка»",
+    "view": "front",
+    "start_end_frame": "neutral-front",
+    "status": "todo",
+    "model": "seedance_2_5",
+    "params": {
+      "mode": "omni_reference",
+      "duration": 6,
+      "resolution": "720p",
+      "aspect_ratio": "1:1",
+      "generate_audio": false,
+      "declined_preset_id": "24bae836-2c4a-48e0-89b6-49fcc0b21612"
+    },
+    "prompt": "Flat minimal 2D vector illustration animation, exactly the same white goose as in the reference image, front view, facing the camera, camera completely static. The goose hops with both feet spreading wide apart while both wings swing up above its head, then hops back with feet together and wings down, repeats rhythmically, then slowly returns to exactly the same relaxed standing pose it started in so the clip loops seamlessly. Keep the exact flat style: solid cream-white body, light grey wing(s), orange beak and legs, tiny dot eye(s), no outlines, no shading, no gradients, no feather texture, flat solid green background identical to the reference, no other objects, character identical throughout."
+  },
+  {
+    "pose": "knees",
+    "name": "Марш з високими колінами",
+    "view": "front",
+    "start_end_frame": "neutral-front",
+    "status": "todo",
+    "model": "seedance_2_5",
+    "params": {
+      "mode": "omni_reference",
+      "duration": 6,
+      "resolution": "720p",
+      "aspect_ratio": "1:1",
+      "generate_audio": false,
+      "declined_preset_id": "24bae836-2c4a-48e0-89b6-49fcc0b21612"
+    },
+    "prompt": "Flat minimal 2D vector illustration animation, exactly the same white goose as in the reference image, front view, facing the camera, camera completely static. The goose marches in place lifting one knee high toward its chest, then the other, wings swinging in opposition, brisk rhythm, then slowly returns to exactly the same relaxed standing pose it started in so the clip loops seamlessly. Keep the exact flat style: solid cream-white body, light grey wing(s), orange beak and legs, tiny dot eye(s), no outlines, no shading, no gradients, no feather texture, flat solid green background identical to the reference, no other objects, character identical throughout."
+  },
+  {
+    "pose": "hip",
+    "name": "Розтяжка стегон",
+    "view": "side",
+    "start_end_frame": "neutral-side",
+    "status": "todo",
+    "model": "seedance_2_5",
+    "params": {
+      "mode": "omni_reference",
+      "duration": 6,
+      "resolution": "720p",
+      "aspect_ratio": "1:1",
+      "generate_audio": false,
+      "declined_preset_id": "24bae836-2c4a-48e0-89b6-49fcc0b21612"
+    },
+    "prompt": "Flat minimal 2D vector illustration animation, exactly the same white goose as in the reference image, side profile view, camera completely static. The goose bends one leg back, catches the foot behind it with its wing and pulls the heel toward its tail, holds the stretch balancing on the other leg, releases, then slowly returns to exactly the same relaxed standing pose it started in so the clip loops seamlessly. Keep the exact flat style: solid cream-white body, light grey wing(s), orange beak and legs, tiny dot eye(s), no outlines, no shading, no gradients, no feather texture, flat solid green background identical to the reference, no other objects, character identical throughout."
+  },
+  {
+    "pose": "walk",
+    "name": "Просто пройдись",
+    "view": "side",
+    "start_end_frame": "neutral-side",
+    "status": "todo",
+    "model": "seedance_2_5",
+    "params": {
+      "mode": "omni_reference",
+      "duration": 6,
+      "resolution": "720p",
+      "aspect_ratio": "1:1",
+      "generate_audio": false,
+      "declined_preset_id": "24bae836-2c4a-48e0-89b6-49fcc0b21612"
+    },
+    "prompt": "Flat minimal 2D vector illustration animation, exactly the same white goose as in the reference image, side profile view, camera completely static. The goose walks in place with a relaxed waddle, head bobbing gently, feet lifting and landing on the same spots, then slowly returns to exactly the same relaxed standing pose it started in so the clip loops seamlessly. Keep the exact flat style: solid cream-white body, light grey wing(s), orange beak and legs, tiny dot eye(s), no outlines, no shading, no gradients, no feather texture, flat solid green background identical to the reference, no other objects, character identical throughout."
+  },
+  {
+    "pose": "wingcircles",
+    "name": "Великі кола руками",
+    "view": "3q",
+    "start_end_frame": "neutral-3q",
+    "status": "todo",
+    "model": "seedance_2_5",
+    "params": {
+      "mode": "omni_reference",
+      "duration": 6,
+      "resolution": "720p",
+      "aspect_ratio": "1:1",
+      "generate_audio": false,
+      "declined_preset_id": "24bae836-2c4a-48e0-89b6-49fcc0b21612"
+    },
+    "prompt": "Flat minimal 2D vector illustration animation, exactly the same white goose as in the reference image, three-quarter view, camera completely static. The goose swings both wings in large slow full circles, forward and over the top and back, three times, then slowly returns to exactly the same relaxed standing pose it started in so the clip loops seamlessly. Keep the exact flat style: solid cream-white body, light grey wing(s), orange beak and legs, tiny dot eye(s), no outlines, no shading, no gradients, no feather texture, flat solid green background identical to the reference, no other objects, character identical throughout."
+  },
+  {
+    "pose": "breathe",
+    "name": "Три глибокі вдихи",
+    "view": "3q",
+    "start_end_frame": "neutral-3q",
+    "status": "todo",
+    "model": "seedance_2_5",
+    "params": {
+      "mode": "omni_reference",
+      "duration": 6,
+      "resolution": "720p",
+      "aspect_ratio": "1:1",
+      "generate_audio": false,
+      "declined_preset_id": "24bae836-2c4a-48e0-89b6-49fcc0b21612"
+    },
+    "prompt": "Flat minimal 2D vector illustration animation, exactly the same white goose as in the reference image, three-quarter view, camera completely static. The goose takes a slow deep breath — chest and body expand visibly, neck lengthens and head rises — holds, then exhales slowly as everything settles, twice, then slowly returns to exactly the same relaxed standing pose it started in so the clip loops seamlessly. Keep the exact flat style: solid cream-white body, light grey wing(s), orange beak and legs, tiny dot eye(s), no outlines, no shading, no gradients, no feather texture, flat solid green background identical to the reference, no other objects, character identical throughout."
+  },
+  {
+    "pose": "shake",
+    "name": "Струсити все з себе",
+    "view": "3q",
+    "start_end_frame": "neutral-3q",
+    "status": "todo",
+    "model": "seedance_2_5",
+    "params": {
+      "mode": "omni_reference",
+      "duration": 6,
+      "resolution": "720p",
+      "aspect_ratio": "1:1",
+      "generate_audio": false,
+      "declined_preset_id": "24bae836-2c4a-48e0-89b6-49fcc0b21612"
+    },
+    "prompt": "Flat minimal 2D vector illustration animation, exactly the same white goose as in the reference image, three-quarter view, camera completely static. The goose shakes its whole body loosely and quickly like shaking off water — wings flapping, tail wagging, head wobbling — then settles calm, then slowly returns to exactly the same relaxed standing pose it started in so the clip loops seamlessly. Keep the exact flat style: solid cream-white body, light grey wing(s), orange beak and legs, tiny dot eye(s), no outlines, no shading, no gradients, no feather texture, flat solid green background identical to the reference, no other objects, character identical throughout."
+  }
+]
