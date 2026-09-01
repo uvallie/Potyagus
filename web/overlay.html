@@ -1,0 +1,888 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<title>Потягусь</title>
+<style>
+  :root{
+    --sky-0:#EAF3E1; --sky-1:#D9EBCB;
+    --grass-0:#8FC072; --grass-1:#6EA755; --grass-2:#4F8A3E;
+    --ink:#1E3A24; --ink-dim:#587A5B; --ink-faint:#8AA58B;
+    --accent:#E8801F; --accent-2:#F5A94B; --good:#2E7D4F;
+    --card:rgba(255,255,255,.55);
+    --horizon:66vh;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;overflow:hidden}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(900px 500px at 70% 8%, #FFFFFF 0%, transparent 60%),
+      linear-gradient(180deg, var(--sky-0) 0%, var(--sky-1) var(--horizon),
+                      var(--grass-0) var(--horizon), var(--grass-1) 82%, var(--grass-2) 100%);
+    -webkit-user-select:none; user-select:none; cursor:default;
+  }
+
+  /* ---------- meadow ---------- */
+  .ground{
+    position:fixed;left:0;right:0;top:calc(var(--horizon) - 22px);height:44px;z-index:1;
+    pointer-events:none;
+  }
+  .ground svg{width:100%;height:100%;display:block}
+  .tuft{position:fixed;z-index:1;pointer-events:none;width:clamp(40px,4vw,70px);opacity:.9}
+  .sun{
+    position:fixed;right:clamp(40px,7vw,120px);top:clamp(28px,6vh,70px);z-index:1;
+    width:clamp(70px,7vw,110px);aspect-ratio:1;border-radius:50%;
+    background:radial-gradient(circle at 40% 40%, #FFF4C2, #F7D86A 70%, rgba(247,216,106,0) 72%);
+    box-shadow:0 0 60px 20px rgba(255,236,160,.45);pointer-events:none;
+  }
+  .cloud{position:fixed;z-index:1;pointer-events:none;fill:#fff;opacity:.85;
+    animation:drift 60s linear infinite}
+  @keyframes drift{from{transform:translateX(-4vw)}to{transform:translateX(4vw)}}
+
+  /* ---------- layout ---------- */
+  .stage{
+    position:relative;z-index:2;height:100%;width:100%;
+    display:grid;grid-template-columns:minmax(340px,44%) 1fr;
+    gap:clamp(20px,4vw,80px);
+    padding:clamp(24px,4vh,56px) clamp(36px,6vw,110px);
+    max-width:1680px;margin-inline:auto;
+    opacity:0;transform:scale(.985);
+    animation:enter .6s cubic-bezier(.2,.9,.25,1) .05s forwards;
+  }
+  @keyframes enter{to{opacity:1;transform:none}}
+
+  /* character stands on the horizon line */
+  .charwrap{position:relative;height:100%}
+  .goose-slot{
+    position:absolute;left:50%;top:var(--horizon);
+    width:min(38vw,44vh,560px);
+    transform:translate(-50%,-87%);       /* feet at ~87% of the drawing's height */
+  }
+  .clearing{position:absolute;inset:-4% -10% -2% -10%;border-radius:50%;background:#7DB262;
+    filter:blur(22px);opacity:0;transition:opacity .5s;pointer-events:none}
+  .clip{display:none;width:100%;aspect-ratio:1;object-fit:cover;position:relative;
+    -webkit-mask-image:radial-gradient(ellipse 60% 64% at 50% 54%, #000 56%, transparent 84%);
+    mask-image:radial-gradient(ellipse 60% 64% at 50% 54%, #000 56%, transparent 84%)}
+  .goose-slot.has-clip{transform:translate(-50%,-80%)}   /* clip square sits lower, mostly on the grass */
+  .goose-slot.has-clip .clearing{opacity:.85}
+  .goose-slot.has-clip .clip{display:block;animation:dropin .7s cubic-bezier(.18,1.4,.5,1) both}
+  .goose-slot.has-clip svg.goose{display:none!important}
+  svg.goose{display:none;width:100%;height:auto;overflow:visible;
+    animation:dropin .7s cubic-bezier(.18,1.4,.5,1) both}
+  svg.goose.active{display:block}
+  @keyframes dropin{0%{transform:translateY(-40px);opacity:0}100%{transform:none;opacity:1}}
+
+  /* ---------- right panel ---------- */
+  .panel{display:flex;flex-direction:column;justify-content:center;gap:clamp(10px,1.8vh,22px);max-width:760px}
+  .kicker{font-size:clamp(12px,.9vw,14px);letter-spacing:.32em;text-transform:uppercase;color:var(--ink);opacity:.72}
+  .brand{
+    font-size:clamp(64px,7.4vw,124px);line-height:.92;font-weight:800;letter-spacing:-.045em;
+    color:var(--ink);text-wrap:balance;margin:2px 0 6px;
+  }
+  .brand em{font-style:normal;color:var(--accent)}
+  .taunt{
+    font-size:clamp(22px,2.3vw,36px);line-height:1.2;font-weight:600;letter-spacing:-.015em;
+    color:var(--ink);text-wrap:balance;max-width:26ch;
+  }
+
+  .card{
+    display:flex;align-items:center;gap:clamp(16px,1.6vw,26px);
+    background:var(--card);border:1px solid rgba(255,255,255,.7);
+    backdrop-filter:blur(8px);border-radius:22px;
+    padding:clamp(14px,1.6vh,20px) clamp(16px,1.8vw,24px);
+    box-shadow:0 14px 40px -24px rgba(30,58,36,.45);
+  }
+  .ring{position:relative;flex:0 0 auto;width:clamp(84px,7.4vw,118px);aspect-ratio:1}
+  .ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+  .ring .track{fill:none;stroke:rgba(30,58,36,.10);stroke-width:7}
+  .ring .prog{fill:none;stroke:var(--accent);stroke-width:7;stroke-linecap:round;
+    transition:stroke-dashoffset .95s linear}
+  .ring .num{position:absolute;inset:0;display:grid;place-items:center;
+    font-size:clamp(26px,2.4vw,38px);font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.03em}
+  .ring.done .prog{stroke:var(--good);transition:stroke-dashoffset .4s ease}
+  .ring.done .num{color:var(--good)}
+  .exname{font-size:clamp(20px,1.9vw,30px);font-weight:700;letter-spacing:-.015em;line-height:1.15}
+  .exsub{margin-top:5px;font-size:clamp(12px,.9vw,14px);color:var(--ink-dim);letter-spacing:.14em;text-transform:uppercase}
+
+  ol.steps{list-style:none;display:flex;flex-direction:column;gap:clamp(8px,1.2vh,14px);padding-left:4px}
+  ol.steps li{display:flex;gap:14px;align-items:flex-start;
+    font-size:clamp(15px,1.25vw,21px);line-height:1.4;color:var(--ink);
+    opacity:0;transform:translateX(-12px);animation:slidein .45s cubic-bezier(.2,.9,.25,1) forwards}
+  ol.steps li:nth-child(1){animation-delay:.10s}
+  ol.steps li:nth-child(2){animation-delay:.22s}
+  ol.steps li:nth-child(3){animation-delay:.34s}
+  @keyframes slidein{to{opacity:1;transform:none}}
+  ol.steps li b{flex:0 0 auto;width:26px;height:26px;border-radius:50%;margin-top:1px;
+    display:grid;place-items:center;font-size:12px;font-weight:700;
+    background:rgba(255,255,255,.9);color:var(--accent);border:1px solid rgba(232,128,31,.55)}
+
+  /* ---------- buttons ---------- */
+  .actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  button{font:inherit;border:0;cursor:pointer;border-radius:100px;
+    transition:transform .16s cubic-bezier(.2,.9,.25,1),box-shadow .22s,background .22s,opacity .22s}
+  button:active{transform:scale(.965)}
+  .btn-primary{
+    padding:clamp(15px,1.8vh,22px) clamp(30px,2.8vw,48px);
+    font-size:clamp(17px,1.4vw,23px);font-weight:700;color:#fff;
+    background:linear-gradient(96deg,var(--accent-2),var(--accent));
+    box-shadow:0 12px 30px -10px rgba(232,128,31,.7);
+  }
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 18px 40px -12px rgba(232,128,31,.8)}
+  .btn-primary.pulse{animation:pulse 1.7s ease-in-out infinite}
+  @keyframes pulse{0%,100%{transform:none}50%{transform:translateY(-3px) scale(1.025)}}
+  .btn-primary.good{background:linear-gradient(96deg,#5FB07E,#2E7D4F);box-shadow:0 12px 30px -10px rgba(46,125,79,.6)}
+  .btn-ghost{padding:clamp(12px,1.3vh,17px) clamp(20px,1.9vw,30px);
+    font-size:clamp(14px,1.05vw,17px);font-weight:600;color:var(--ink-dim);
+    background:rgba(255,255,255,.7);border:1px solid rgba(30,58,36,.16)}
+  .btn-ghost:hover{background:rgba(255,255,255,.8);color:var(--ink)}
+  .btn-skip{background:none;border:0;color:var(--ink);opacity:.78;font-size:clamp(13px,.95vw,16px);
+    padding:10px 6px;text-decoration:underline;text-underline-offset:4px;text-decoration-color:rgba(30,58,36,.45)}
+  .btn-skip:hover{opacity:1}
+
+  .hint{font-size:clamp(13px,1vw,16px);color:var(--ink);opacity:.82;margin-top:-4px}
+  .hint kbd{font:inherit;font-size:.85em;padding:2px 8px;border-radius:6px;
+    background:rgba(255,255,255,.7);border:1px solid rgba(30,58,36,.15)}
+
+  .only-idle,.only-active{display:flex;flex-direction:column;gap:clamp(14px,2vh,22px)}
+  /* ---------- states ---------- */
+  [data-state="idle"] .only-active,[data-state="idle"] .only-count{display:none!important}
+  [data-state="countdown"] .only-idle,[data-state="countdown"] .only-active{display:none!important}
+  [data-state="active"] .only-idle,[data-state="active"] .only-count{display:none!important}
+  [data-state="idle"] .stage{cursor:pointer}
+
+  .count{
+    display:grid;place-items:center;min-height:clamp(140px,22vh,240px);
+  }
+  .count b{
+    font-size:clamp(120px,16vw,260px);line-height:1;font-weight:800;letter-spacing:-.06em;
+    color:var(--accent);animation:pop .9s cubic-bezier(.2,1.3,.4,1) both;
+  }
+  .count small{display:block;text-align:center;font-size:clamp(14px,1.2vw,20px);
+    color:var(--ink);opacity:.8;letter-spacing:.2em;text-transform:uppercase;margin-top:10px}
+  @keyframes pop{0%{transform:scale(.4);opacity:0}45%{transform:scale(1.08);opacity:1}100%{transform:scale(1)}}
+
+  /* ---------- footer ---------- */
+  .foot{position:fixed;left:clamp(36px,6vw,110px);bottom:clamp(20px,3vh,36px);z-index:3;
+    display:flex;align-items:center;gap:14px;font-size:clamp(12px,.9vw,15px);color:#EAF3E1;
+    opacity:0;animation:fadein .6s ease .9s forwards}
+  @keyframes fadein{to{opacity:.95}}
+  .dots{display:flex;gap:7px}
+  .dots i{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.35);display:block}
+  .dots i.on{background:#FFF1B8;box-shadow:0 0 10px rgba(255,241,184,.8)}
+  .clock{position:fixed;right:clamp(36px,6vw,110px);bottom:clamp(20px,3vh,36px);z-index:3;
+    font-size:clamp(12px,.9vw,15px);color:#EAF3E1;opacity:0;font-variant-numeric:tabular-nums;
+    animation:fadein .6s ease .9s forwards}
+
+  /* ---------- confetti / farewell ---------- */
+  .confetti{position:fixed;inset:0;pointer-events:none;z-index:5;overflow:hidden}
+  .confetti i{position:absolute;top:-20px;width:10px;height:14px;border-radius:2px;opacity:0;animation:fall linear forwards}
+  @keyframes fall{0%{opacity:1;transform:translateY(-10vh) rotate(0)}100%{opacity:.15;transform:translateY(112vh) rotate(760deg)}}
+  .bye{position:fixed;inset:0;z-index:6;display:grid;place-items:center;
+    background:rgba(234,243,225,.6);backdrop-filter:blur(14px);opacity:0;pointer-events:none;transition:opacity .45s ease}
+  .bye.show{opacity:1}
+  .bye p{font-size:clamp(26px,2.8vw,46px);font-weight:800;text-align:center;max-width:22ch;text-wrap:balance;
+    color:var(--good);letter-spacing:-.02em;transform:translateY(14px) scale(.96);transition:transform .5s cubic-bezier(.2,1.3,.4,1)}
+  .bye.show p{transform:none}
+
+  @media (max-aspect-ratio:1/1),(max-width:900px){
+    :root{--horizon:44vh}
+    .stage{grid-template-columns:1fr;grid-template-rows:auto 1fr;padding:4vh 7vw;gap:2vh}
+    .charwrap{min-height:36vh}
+    .goose-slot{width:min(56vw,300px)}
+    .brand{font-size:clamp(48px,12vw,84px)}
+    .panel{max-width:none}
+  }
+
+  /* ================= CHARACTER POSES ================= */
+
+  .goose *{transform-box:view-box}
+  .sparkle{opacity:0}
+  .celebrate .sparkle{animation:spark .85s ease-out forwards}
+  .celebrate .sparkle:nth-of-type(2){animation-delay:.13s}
+  .celebrate .sparkle:nth-of-type(3){animation-delay:.26s}
+  .celebrate .sparkle:nth-of-type(4){animation-delay:.39s}
+  @keyframes spark{0%{opacity:0;transform:scale(.2)}45%{opacity:1;transform:scale(1.25)}100%{opacity:0;transform:scale(.75)}}
+/* ================= RIG ================= */
+  .goose .p-chrInner,.goose .p-upper,.goose .p-body,.goose .p-neck,.goose .p-head,
+  .goose .p-wing,.goose .p-wingL,.goose .p-wingR,.goose .p-tail,
+  .goose .p-legL,.goose .p-legR,.goose .p-shinL,.goose .p-shinR,
+  .goose .p-footL,.goose .p-footR{transition:transform .5s cubic-bezier(.3,.9,.3,1)}
+
+  /* --- side view pivots --- */
+  .side .p-chrInner{transform-origin:180px 240px}
+  .side .p-upper   {transform-origin:180px 205px}
+  .side .p-body    {transform-origin:180px 200px}
+  .side .p-neck    {transform-origin:134px 150px}
+  .side .p-head    {transform-origin:86px 88px}
+  .side .p-wing    {transform-origin:172px 157px}
+  .side .p-tail    {transform-origin:236px 152px}
+  .side .p-legL    {transform-origin:198px 180px}
+  .side .p-legR    {transform-origin:162px 180px}
+  .side .p-shinL   {transform-origin:202px 206px}
+  .side .p-shinR   {transform-origin:158px 206px}
+  .side .p-footL   {transform-origin:200px 228px}
+  .side .p-footR   {transform-origin:152px 228px}
+  .side .p-eye     {transition:transform .4s ease}
+
+  /* --- front view pivots --- */
+  .front .p-chrInner{transform-origin:151px 266px}
+  .front .p-upper   {transform-origin:151px 208px}
+  .front .p-body    {transform-origin:151px 208px}
+  .front .p-neck    {transform-origin:151px 132px}
+  .front .p-head    {transform-origin:151px 68px}
+  .front .p-wingL   {transform-origin:114px 140px}
+  .front .p-wingR   {transform-origin:188px 140px}
+  .front .p-legL    {transform-origin:134px 206px}
+  .front .p-legR    {transform-origin:168px 206px}
+  .front .p-shinL   {transform-origin:130px 238px}
+  .front .p-shinR   {transform-origin:172px 238px}
+  .front .p-footL   {transform-origin:128px 264px}
+  .front .p-footR   {transform-origin:174px 264px}
+
+  /* always alive */
+  .goose .p-chrInner{animation:breath 3.6s ease-in-out infinite}
+  @keyframes breath{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.025) translateY(-3px)}}
+  .side .p-tail{animation:wag 2.4s ease-in-out infinite}
+  @keyframes wag{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(7deg)}}
+  .side .lid{animation:blink 5.4s infinite;transform-origin:67px 74px}
+  .front .lidL{animation:blink 5.4s infinite;transform-origin:142px 40px}
+  .front .lidR{animation:blink 5.4s infinite;transform-origin:160px 40px}
+  @keyframes blink{0%,95.5%,100%{transform:scaleY(0)}96.6%,98.6%{transform:scaleY(1)}}
+
+  /* ============ SIDE POSES ============ */
+
+  /* 1. reach — up on tiptoes, wing to the ceiling */
+  .pose-reach .p-wing{animation:reachWing 2.4s ease-in-out infinite}
+  .pose-reach .p-neck{animation:reachNeck 2.4s ease-in-out infinite}
+  .pose-reach .p-chrInner{animation:reachBody 2.4s ease-in-out infinite}
+  @keyframes reachWing{0%,100%{transform:rotate(-34deg)}55%{transform:rotate(-64deg) scaleX(1.2)}}
+  @keyframes reachNeck{0%,100%{transform:rotate(14deg)}55%{transform:rotate(46deg) scaleY(1.16)}}
+  @keyframes reachBody{0%,100%{transform:translateY(0) scaleY(1)}55%{transform:translateY(-24px) scaleY(1.09)}}
+
+  /* 6. side lunges — wide stance, weight shifting from one bent knee to the other */
+  .pose-lunge .p-upper{animation:fLungeUp 3.4s ease-in-out infinite}
+  .pose-lunge .p-legL{animation:fLungeLegL 3.4s ease-in-out infinite}
+  .pose-lunge .p-legR{animation:fLungeLegR 3.4s ease-in-out infinite}
+  .pose-lunge .p-shinL{animation:fLungeShinL 3.4s ease-in-out infinite}
+  .pose-lunge .p-shinR{animation:fLungeShinR 3.4s ease-in-out infinite}
+  .pose-lunge .p-wingL{transform:rotate(78deg) translate(14px,6px)}
+  .pose-lunge .p-wingR{transform:rotate(-78deg) translate(-14px,6px)}
+  @keyframes fLungeUp{0%,100%{transform:translate(0,10px)}25%{transform:translate(-26px,26px)}75%{transform:translate(26px,26px)}}
+  @keyframes fLungeLegL{0%,100%{transform:rotate(30deg)}25%{transform:rotate(48deg)}75%{transform:rotate(18deg)}}
+  @keyframes fLungeLegR{0%,100%{transform:rotate(-30deg)}25%{transform:rotate(-18deg)}75%{transform:rotate(-48deg)}}
+  @keyframes fLungeShinL{0%,100%{transform:rotate(-30deg)}25%{transform:rotate(-62deg)}75%{transform:rotate(-12deg)}}
+  @keyframes fLungeShinR{0%,100%{transform:rotate(30deg)}25%{transform:rotate(12deg)}75%{transform:rotate(62deg)}}
+
+  /* 23. toes — wing tip pinned to the foot and held there */
+  .pose-toes .p-upper{animation:toesUp 4s ease-in-out infinite}
+  .pose-toes .p-neck{animation:toesNeck 4s ease-in-out infinite}
+  .pose-toes .p-wing{animation:toesWing 4s ease-in-out infinite}
+  .pose-toes .p-legR{transform:rotate(0)}
+  @keyframes toesUp{0%,100%{transform:rotate(-16deg)}55%{transform:rotate(-34deg)}}
+  @keyframes toesNeck{0%,100%{transform:rotate(-34deg)}55%{transform:rotate(-56deg)}}
+  @keyframes toesWing{0%,100%{transform:rotate(96deg) scaleX(.94)}55%{transform:rotate(114deg) scaleX(1.02)}}
+
+  /* 12. cat-cow — wing planted on the floor, back arching over it */
+  .pose-catcow .p-chrInner{transform:translateY(14px)}
+  .pose-catcow .p-upper{animation:ccUpper 3.8s ease-in-out infinite}
+  .pose-catcow .p-wing{animation:ccWing 3.8s ease-in-out infinite}
+  .pose-catcow .p-neck{animation:ccNeck 3.8s ease-in-out infinite}
+  .pose-catcow .p-tail{animation:ccTail 3.8s ease-in-out infinite}
+  .pose-catcow .p-legL{transform:rotate(-12deg)}
+  .pose-catcow .p-legR{transform:rotate(-12deg)}
+  @keyframes ccUpper{0%,100%{transform:rotate(-6deg)}25%{transform:rotate(2deg)}75%{transform:rotate(-16deg)}}
+  @keyframes ccWing{0%,100%{transform:rotate(126deg) scaleX(1.16)}25%{transform:rotate(118deg) scaleX(1.16)}75%{transform:rotate(136deg) scaleX(1.16)}}
+  @keyframes ccNeck{0%,100%{transform:rotate(-26deg)}25%{transform:rotate(14deg)}75%{transform:rotate(-58deg)}}
+  @keyframes ccTail{0%,100%{transform:rotate(0)}25%{transform:rotate(-24deg)}75%{transform:rotate(26deg)}}
+
+  /* 9. calf — both wings into the wall, back leg driving the heel down */
+  .pose-calf .p-chrInner{animation:calfLean 2.8s ease-in-out infinite}
+  .pose-calf .p-wing{transform:rotate(-168deg) scaleX(1.12)}
+  .pose-calf .p-legL{animation:calfPush 2.8s ease-in-out infinite}
+  .pose-calf .p-shinL{transform:rotate(-16deg)}
+  .pose-calf .p-neck{transform:rotate(10deg)}
+  @keyframes calfLean{0%,100%{transform:rotate(-10deg)}50%{transform:rotate(-22deg) translateX(-10px)}}
+  @keyframes calfPush{0%,100%{transform:rotate(34deg)}50%{transform:rotate(52deg)}}
+
+  /* 10. hip — heel pulled up behind, wing holding it */
+  .pose-hip .p-legL{transform:rotate(22deg)}
+  .pose-hip .p-shinL{animation:hipShin 3s ease-in-out infinite}
+  .pose-hip .p-wing{animation:hipWing 3s ease-in-out infinite}
+  .pose-hip .p-upper{transform:rotate(-6deg)}
+  .pose-hip .p-neck{transform:rotate(-8deg)}
+  /* wing tip lands on the lifted foot and pulls it in */
+  @keyframes hipShin{0%,100%{transform:rotate(-112deg)}50%{transform:rotate(-136deg)}}
+  @keyframes hipWing{0%,100%{transform:rotate(40deg) scaleX(.82)}50%{transform:rotate(48deg) scaleX(.86)}}
+
+  /* 14. walk */
+  .pose-walk .p-legL{animation:walkL .9s ease-in-out infinite}
+  .pose-walk .p-legR{animation:walkR .9s ease-in-out infinite}
+  .pose-walk .p-shinL{animation:walkShinL .9s ease-in-out infinite}
+  .pose-walk .p-shinR{animation:walkShinR .9s ease-in-out infinite}
+  .pose-walk .p-neck{animation:walkNeck .9s ease-in-out infinite}
+  .pose-walk .p-chrInner{animation:walkBob .45s ease-in-out infinite}
+  @keyframes walkL{0%,100%{transform:rotate(34deg)}50%{transform:rotate(-30deg)}}
+  @keyframes walkR{0%,100%{transform:rotate(-30deg)}50%{transform:rotate(34deg)}}
+  @keyframes walkShinL{0%,100%{transform:rotate(-30deg)}50%{transform:rotate(4deg)}}
+  @keyframes walkShinR{0%,100%{transform:rotate(4deg)}50%{transform:rotate(-30deg)}}
+  @keyframes walkNeck{0%,100%{transform:rotate(-9deg)}50%{transform:rotate(10deg)}}
+  @keyframes walkBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+
+  /* 11. eyes 20-20-20 */
+  .pose-eyes .p-neck{animation:lookNeck 6s ease-in-out infinite}
+  .pose-eyes .p-head{animation:lookHead 6s ease-in-out infinite}
+  .pose-eyes .p-eye{animation:lookEye 6s ease-in-out infinite}
+  .pose-eyes .lid{animation:slowBlink 2.2s infinite}
+  .pose-eyes .p-wing{transform:rotate(8deg)}
+  /* neck stretched up and forward, gaze lifted to the distance, panning slowly */
+  @keyframes lookNeck{0%,100%{transform:rotate(26deg) scaleY(1.12)}50%{transform:rotate(40deg) scaleY(1.12)}}
+  @keyframes lookHead{0%,100%{transform:rotate(-22deg)}50%{transform:rotate(-34deg)}}
+  @keyframes lookEye{0%,100%{transform:translate(-2px,-3px)}50%{transform:translate(3px,-3px)}}
+  @keyframes slowBlink{0%,80%,100%{transform:scaleY(0)}86%,94%{transform:scaleY(1)}}
+
+  /* 8. wrists — one wing held out, the other bending it back */
+  .pose-wrists .p-wing{animation:wristWing 2.4s ease-in-out infinite}
+  .pose-wrists .p-neck{animation:wristNeck 2.4s ease-in-out infinite}
+  @keyframes wristWing{0%,100%{transform:rotate(-20deg) scaleX(1)}50%{transform:rotate(-46deg) scaleX(1.22)}}
+  @keyframes wristNeck{0%,100%{transform:rotate(0)}50%{transform:rotate(-24deg)}}
+
+  /* 17. neck rolls */
+  .pose-neckroll .p-neck{animation:rollNeck 5s linear infinite}
+  .pose-neckroll .p-head{animation:rollHead 5s linear infinite}
+  @keyframes rollNeck{0%{transform:rotate(0)}25%{transform:rotate(40deg)}
+    50%{transform:rotate(0) scaleY(.9)}75%{transform:rotate(-44deg)}100%{transform:rotate(0)}}
+  @keyframes rollHead{0%{transform:rotate(0)}25%{transform:rotate(24deg)}
+    50%{transform:rotate(0)}75%{transform:rotate(-26deg)}100%{transform:rotate(0)}}
+
+  /* 19. chin tuck */
+  .pose-chintuck .p-neck{animation:tuckNeck 3.2s ease-in-out infinite}
+  .pose-chintuck .p-head{animation:tuckHead 3.2s ease-in-out infinite}
+  @keyframes tuckNeck{0%,100%{transform:rotate(-16deg) translateX(-6px)}50%{transform:rotate(26deg) translateX(10px)}}
+  @keyframes tuckHead{0%,100%{transform:rotate(14deg)}50%{transform:rotate(-24deg)}}
+
+  /* 21. back bend */
+  .pose-backbend .p-upper{animation:archUp 3.6s ease-in-out infinite}
+  .pose-backbend .p-neck{animation:archNeck 3.6s ease-in-out infinite}
+  .pose-backbend .p-wing{animation:archWing 3.6s ease-in-out infinite}
+  @keyframes archUp{0%,100%{transform:rotate(0)}55%{transform:rotate(26deg)}}
+  @keyframes archNeck{0%,100%{transform:rotate(0)}55%{transform:rotate(62deg)}}
+  @keyframes archWing{0%,100%{transform:rotate(0)}55%{transform:rotate(48deg) scaleX(1.15)}}
+
+  /* 18. ankle circles */
+  .pose-ankles .p-legR{transform:rotate(-34deg)}
+  .pose-ankles .p-shinR{transform:rotate(-22deg)}
+  .pose-ankles .p-footR{animation:ankleSpin 2.4s linear infinite}
+  .pose-ankles .p-wing{transform:rotate(-14deg)}
+  @keyframes ankleSpin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+
+  /* ============ FRONT POSES ============ */
+
+  /* 2. neck — ear to shoulder, reads only from the front */
+  .pose-neck .p-head{animation:fNeckHead 4.2s ease-in-out infinite}
+  .pose-neck .p-neck{animation:fNeckNeck 4.2s ease-in-out infinite}
+  @keyframes fNeckHead{0%,100%{transform:rotate(0)}25%{transform:rotate(-34deg)}50%{transform:rotate(0)}75%{transform:rotate(34deg)}}
+  @keyframes fNeckNeck{0%,100%{transform:rotate(0)}25%{transform:rotate(-16deg)}75%{transform:rotate(16deg)}}
+
+  /* 3. shoulders */
+  .pose-shoulders .p-wingL{animation:fShrugL 2s ease-in-out infinite}
+  .pose-shoulders .p-wingR{animation:fShrugR 2s ease-in-out infinite}
+  .pose-shoulders .p-upper{animation:fShrugBody 2s ease-in-out infinite}
+  @keyframes fShrugL{0%,100%{transform:rotate(0)}35%{transform:rotate(46deg)}70%{transform:rotate(-14deg)}}
+  @keyframes fShrugR{0%,100%{transform:rotate(0)}35%{transform:rotate(-46deg)}70%{transform:rotate(14deg)}}
+  @keyframes fShrugBody{0%,100%{transform:translateY(0)}35%{transform:translateY(-12px)}}
+
+  /* 4. chest — both wings swept back, chest open */
+  .pose-chest .p-wingL{animation:fChestL 3s ease-in-out infinite}
+  .pose-chest .p-wingR{animation:fChestR 3s ease-in-out infinite}
+  .pose-chest .p-body{animation:fChestBody 3s ease-in-out infinite}
+  .pose-chest .p-head{animation:fChestHead 3s ease-in-out infinite}
+  .pose-chest .p-neck{animation:fChestNeck 3s ease-in-out infinite}
+  @keyframes fChestNeck{0%,100%{transform:scaleY(1)}55%{transform:scaleY(1.1)}}
+  /* wings swing back and foreshorten (scaleX shrinks) — read as arms clasped behind the back */
+  @keyframes fChestL{0%,100%{transform:rotate(0) scaleX(1)}55%{transform:rotate(-34deg) translate(-16px,10px) scaleX(.55)}}
+  @keyframes fChestR{0%,100%{transform:rotate(0) scaleX(1)}55%{transform:rotate(34deg) translate(16px,10px) scaleX(.55)}}
+  @keyframes fChestBody{0%,100%{transform:scaleX(1) translateY(0)}55%{transform:scaleX(1.18) translateY(-6px)}}
+  @keyframes fChestHead{0%,100%{transform:translateY(0) rotate(0)}55%{transform:translateY(-12px) rotate(0)}}
+
+  /* 5. twist — torso turns, wings swing across */
+  .pose-twist .p-upper{animation:fTwistBody 4.2s ease-in-out infinite}
+  .pose-twist .p-wingL{animation:fTwistL 4.2s ease-in-out infinite}
+  .pose-twist .p-wingR{animation:fTwistR 4.2s ease-in-out infinite}
+  .pose-twist .p-head{animation:fTwistHead 4.2s ease-in-out infinite}
+  @keyframes fTwistBody{0%,100%{transform:scaleX(1) skewX(0)}25%{transform:scaleX(.72) skewX(6deg)}50%{transform:scaleX(1)}75%{transform:scaleX(.72) skewX(-6deg)}}
+  @keyframes fTwistL{0%,100%{transform:rotate(0)}25%{transform:rotate(76deg) translateX(30px)}75%{transform:rotate(-16deg)}}
+  @keyframes fTwistR{0%,100%{transform:rotate(0)}25%{transform:rotate(16deg)}75%{transform:rotate(-76deg) translateX(-30px)}}
+  @keyframes fTwistHead{0%,100%{transform:rotate(0)}25%{transform:rotate(10deg)}75%{transform:rotate(-10deg)}}
+
+  /* 7. squat — knees bend outward, hips drop, feet stay planted */
+  .pose-squat .p-upper{animation:fSquatUp 2s ease-in-out infinite}
+  .pose-squat .p-legL{animation:fSquatLegL 2s ease-in-out infinite}
+  .pose-squat .p-legR{animation:fSquatLegR 2s ease-in-out infinite}
+  .pose-squat .p-shinL{animation:fSquatShinL 2s ease-in-out infinite}
+  .pose-squat .p-shinR{animation:fSquatShinR 2s ease-in-out infinite}
+  .pose-squat .p-footL{animation:fSquatFootL 2s ease-in-out infinite}
+  .pose-squat .p-footR{animation:fSquatFootR 2s ease-in-out infinite}
+  .pose-squat .p-wingL{animation:fSquatWingL 2s ease-in-out infinite}
+  .pose-squat .p-wingR{animation:fSquatWingR 2s ease-in-out infinite}
+  @keyframes fSquatUp{0%,100%{transform:translateY(0)}50%{transform:translateY(26px)}}
+  @keyframes fSquatLegL{0%,100%{transform:rotate(0)}50%{transform:rotate(38deg)}}
+  @keyframes fSquatLegR{0%,100%{transform:rotate(0)}50%{transform:rotate(-38deg)}}
+  @keyframes fSquatShinL{0%,100%{transform:rotate(0)}50%{transform:rotate(-62deg)}}
+  @keyframes fSquatShinR{0%,100%{transform:rotate(0)}50%{transform:rotate(62deg)}}
+  @keyframes fSquatFootL{0%,100%{transform:rotate(0)}50%{transform:rotate(24deg)}}
+  @keyframes fSquatFootR{0%,100%{transform:rotate(0)}50%{transform:rotate(-24deg)}}
+  @keyframes fSquatWingL{0%,100%{transform:rotate(0)}50%{transform:rotate(104deg) translate(10px,4px)}}
+  @keyframes fSquatWingR{0%,100%{transform:rotate(0)}50%{transform:rotate(-104deg) translate(-10px,4px)}}
+
+  /* 13. side bend */
+  .pose-sidebend .p-chrInner{animation:fSideBody 4.2s ease-in-out infinite}
+  .pose-sidebend .p-wingL{animation:fSideL 4.2s ease-in-out infinite}
+  .pose-sidebend .p-wingR{animation:fSideR 4.2s ease-in-out infinite}
+  @keyframes fSideBody{0%,100%{transform:rotate(0)}25%{transform:rotate(-22deg)}75%{transform:rotate(22deg)}}
+  @keyframes fSideL{0%,100%{transform:rotate(0)}25%{transform:rotate(150deg) scaleY(1.1)}75%{transform:rotate(-10deg)}}
+  @keyframes fSideR{0%,100%{transform:rotate(0)}25%{transform:rotate(10deg)}75%{transform:rotate(-150deg) scaleY(1.1)}}
+
+  /* 15. jumping jacks */
+  .pose-jacks .p-chrInner{animation:fJackBody .8s ease-in-out infinite}
+  .pose-jacks .p-wingL{animation:fJackL .8s ease-in-out infinite}
+  .pose-jacks .p-wingR{animation:fJackR .8s ease-in-out infinite}
+  .pose-jacks .p-legL{animation:fJackLegL .8s ease-in-out infinite}
+  .pose-jacks .p-legR{animation:fJackLegR .8s ease-in-out infinite}
+  @keyframes fJackBody{0%,100%{transform:translateY(0) scaleY(.95)}50%{transform:translateY(-30px) scaleY(1.06)}}
+  @keyframes fJackL{0%,100%{transform:rotate(0)}50%{transform:rotate(152deg) scaleY(1.12)}}
+  @keyframes fJackR{0%,100%{transform:rotate(0)}50%{transform:rotate(-152deg) scaleY(1.12)}}
+  @keyframes fJackLegL{0%,100%{transform:rotate(0)}50%{transform:rotate(30deg)}}
+  @keyframes fJackLegR{0%,100%{transform:rotate(0)}50%{transform:rotate(-30deg)}}
+
+  /* 16. high knees */
+  .pose-knees .p-legL{animation:fKneeL .7s ease-in-out infinite}
+  .pose-knees .p-legR{animation:fKneeR .7s ease-in-out infinite}
+  .pose-knees .p-shinL{animation:fKneeShinL .7s ease-in-out infinite}
+  .pose-knees .p-shinR{animation:fKneeShinR .7s ease-in-out infinite}
+  .pose-knees .p-wingL{animation:fKneeWingL .7s ease-in-out infinite}
+  .pose-knees .p-wingR{animation:fKneeWingR .7s ease-in-out infinite}
+  .pose-knees .p-chrInner{animation:fKneeBody .35s ease-in-out infinite}
+  @keyframes fKneeL{0%,100%{transform:rotate(0)}50%{transform:rotate(46deg) translateY(-14px)}}
+  @keyframes fKneeR{0%,100%{transform:rotate(-46deg) translateY(-14px)}50%{transform:rotate(0)}}
+  @keyframes fKneeShinL{0%,100%{transform:rotate(0)}50%{transform:rotate(-72deg)}}
+  @keyframes fKneeShinR{0%,100%{transform:rotate(72deg)}50%{transform:rotate(0)}}
+  @keyframes fKneeWingL{0%,100%{transform:rotate(28deg)}50%{transform:rotate(-16deg)}}
+  @keyframes fKneeWingR{0%,100%{transform:rotate(-16deg)}50%{transform:rotate(28deg)}}
+  @keyframes fKneeBody{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+
+  /* 20. big wing circles */
+  .pose-wingcircles .p-wingL{animation:fSpinL 2.6s linear infinite}
+  .pose-wingcircles .p-wingR{animation:fSpinR 2.6s linear infinite}
+  @keyframes fSpinL{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+  @keyframes fSpinR{0%{transform:rotate(0)}100%{transform:rotate(-360deg)}}
+
+  /* 22. deep breath */
+  .pose-breathe .p-chrInner{animation:fBreathBody 5.2s ease-in-out infinite}
+  .pose-breathe .p-wingL{animation:fBreathL 5.2s ease-in-out infinite}
+  .pose-breathe .p-wingR{animation:fBreathR 5.2s ease-in-out infinite}
+  .pose-breathe .p-neck{animation:fBreathNeck 5.2s ease-in-out infinite}
+  @keyframes fBreathBody{0%,100%{transform:scale(1)}45%{transform:scale(1.14) translateY(-8px)}}
+  @keyframes fBreathL{0%,100%{transform:rotate(0)}45%{transform:rotate(122deg)}}
+  @keyframes fBreathR{0%,100%{transform:rotate(0)}45%{transform:rotate(-122deg)}}
+  @keyframes fBreathNeck{0%,100%{transform:scaleY(1)}45%{transform:scaleY(1.12)}}
+
+  /* 24. shake it out */
+  .pose-shake .p-chrInner{animation:fShakeBody .32s ease-in-out infinite}
+  .pose-shake .p-wingL{animation:fShakeL .24s ease-in-out infinite}
+  .pose-shake .p-wingR{animation:fShakeR .26s ease-in-out infinite}
+  .pose-shake .p-head{animation:fShakeHead .28s ease-in-out infinite}
+  @keyframes fShakeBody{0%,100%{transform:rotate(-5deg) translateY(0)}50%{transform:rotate(5deg) translateY(-6px)}}
+  @keyframes fShakeL{0%,100%{transform:rotate(-30deg)}50%{transform:rotate(34deg)}}
+  @keyframes fShakeR{0%,100%{transform:rotate(30deg)}50%{transform:rotate(-34deg)}}
+  @keyframes fShakeHead{0%,100%{transform:rotate(-14deg)}50%{transform:rotate(14deg)}}
+
+  /* celebration */
+  .celebrate.side .p-chrInner{animation:jump .6s cubic-bezier(.3,1.4,.4,1) 3}
+  .celebrate.side .p-wing{transform:rotate(-78deg) scaleX(1.2)}
+  .celebrate.side .p-neck{transform:rotate(42deg)}
+  .celebrate.front .p-chrInner{animation:jump .6s cubic-bezier(.3,1.4,.4,1) 3}
+  .celebrate.front .p-wingL{transform:rotate(150deg)}
+  .celebrate.front .p-wingR{transform:rotate(-150deg)}
+  @keyframes jump{0%,100%{transform:translateY(0)}28%{transform:translateY(-44px)}62%{transform:translateY(0) scaleY(.9)}}
+
+
+
+  @media (prefers-reduced-motion:reduce){
+    *{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+  }
+</style>
+</head>
+<body data-state="idle">
+
+<div class="sun"></div>
+<svg class="cloud" style="left:8vw;top:9vh;width:clamp(90px,10vw,160px)" viewBox="0 0 160 60"><path d="M20 50h110a18 18 0 0 0-8-34 24 24 0 0 0-44-6 20 20 0 0 0-36 14 14 14 0 0 0-22 26z"/></svg>
+<svg class="cloud" style="left:52vw;top:5vh;width:clamp(70px,7vw,120px);animation-delay:-30s" viewBox="0 0 160 60"><path d="M20 50h110a18 18 0 0 0-8-34 24 24 0 0 0-44-6 20 20 0 0 0-36 14 14 14 0 0 0-22 26z"/></svg>
+
+<div class="ground">
+  <svg viewBox="0 0 1600 44" preserveAspectRatio="none">
+    <path fill="#8FC072" d="M0 24 C 60 10, 120 30, 190 20 S 320 8, 400 22 S 560 34, 650 18 S 800 6, 900 22 S 1050 34, 1150 16 S 1300 8, 1400 22 S 1540 30, 1600 20 L1600 44 L0 44 Z"/>
+  </svg>
+</div>
+<svg class="tuft" style="left:6vw;top:calc(var(--horizon) - 30px)" viewBox="0 0 70 40"><path fill="#4F8A3E" d="M4 40 C 8 24, 6 14, 2 4 C 12 10, 18 22, 20 40 Z M22 40 C 24 22, 30 12, 36 2 C 34 16, 32 28, 30 40 Z M40 40 C 44 26, 54 18, 66 12 C 56 22, 50 30, 48 40 Z"/></svg>
+<svg class="tuft" style="left:36vw;top:calc(var(--horizon) - 26px);width:clamp(30px,3vw,52px)" viewBox="0 0 70 40"><path fill="#4F8A3E" d="M4 40 C 8 24, 6 14, 2 4 C 12 10, 18 22, 20 40 Z M22 40 C 24 22, 30 12, 36 2 C 34 16, 32 28, 30 40 Z M40 40 C 44 26, 54 18, 66 12 C 56 22, 50 30, 48 40 Z"/></svg>
+<svg class="tuft" style="right:9vw;top:calc(var(--horizon) - 28px)" viewBox="0 0 70 40"><path fill="#4F8A3E" d="M4 40 C 8 24, 6 14, 2 4 C 12 10, 18 22, 20 40 Z M22 40 C 24 22, 30 12, 36 2 C 34 16, 32 28, 30 40 Z M40 40 C 44 26, 54 18, 66 12 C 56 22, 50 30, 48 40 Z"/></svg>
+
+<div class="stage" id="stage">
+  <div class="charwrap">
+    <div class="goose-slot" id="gooseSlot">
+      <div class="clearing"></div>
+      <video id="clip" class="clip" muted playsinline loop preload="auto"></video>
+<svg id="chrSide" class="goose side" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+  <ellipse class="p-shadow" cx="180" cy="246" rx="66" ry="7" fill="#0C0616" opacity=".26"/>
+  <g class="p-chrInner">
+    <g class="p-legL">
+      <path d="M198 180 L202 206" stroke="#C96A16" stroke-width="7" stroke-linecap="round" fill="none"/>
+      <g class="p-shinL">
+        <path d="M202 206 L200 228" stroke="#C96A16" stroke-width="7" stroke-linecap="round" fill="none"/>
+        <g class="p-footL"><path d="M200 225 L182 237 L212 237 Z" fill="#C96A16"/></g>
+      </g>
+    </g>
+    <g class="p-upper">
+      <g class="p-tail"><path d="M238 137 L270 126 L248 170 Z" fill="#FFF6E8"/></g>
+      <g class="p-body"><ellipse cx="180" cy="163" rx="70" ry="38" fill="#FFF6E8"/></g>
+      <g class="p-wing">
+        <path d="M150 152 C 176 135, 224 137, 254 154 C 230 173, 178 177, 150 152 Z" fill="#E3DEEE"/>
+      </g>
+      <g class="p-neck">
+        <path d="M134 150 C 120 124, 96 93, 76 78" stroke="#FFF6E8" stroke-width="19"
+              stroke-linecap="round" fill="none"/>
+        <g class="p-head">
+          <ellipse cx="68" cy="75" rx="17" ry="14.5" fill="#FFF6E8"/>
+          <path d="M53 70 L33 80 L53 88 Z" fill="#E8801F"/>
+          <circle cx="45" cy="79" r="1.6" fill="#241338" opacity=".5"/>
+          <g class="p-eye">
+            <circle cx="67" cy="74" r="3.6" fill="#241338"/>
+            <ellipse class="lid" cx="67" cy="74" rx="4.4" ry="4.4" fill="#FFF6E8"/>
+          </g>
+        </g>
+      </g>
+    </g>
+    <g class="p-legR">
+      <path d="M162 180 L158 206" stroke="#E8801F" stroke-width="7" stroke-linecap="round" fill="none"/>
+      <g class="p-shinR">
+        <path d="M158 206 L152 228" stroke="#E8801F" stroke-width="7" stroke-linecap="round" fill="none"/>
+        <g class="p-footR"><path d="M152 225 L132 237 L162 237 Z" fill="#E8801F"/></g>
+      </g>
+    </g>
+  </g>
+
+  <g fill="#FFC46B">
+    <path class="sparkle" d="M40 70 l5 13 13 5 -13 5 -5 13 -5-13 -13-5 13-5z" style="transform-origin:40px 88px"/>
+    <path class="sparkle" d="M258 58 l4 11 11 4 -11 4 -4 11 -4-11 -11-4 11-4z" style="transform-origin:258px 73px"/>
+    <path class="sparkle" d="M270 196 l4 10 10 4 -10 4 -4 10 -4-10 -10-4 10-4z" style="transform-origin:270px 210px"/>
+    <path class="sparkle" d="M32 208 l4 10 10 4 -10 4 -4 10 -4-10 -10-4 10-4z" style="transform-origin:32px 222px"/>
+  </g>
+</svg>
+<svg id="chrFront" class="goose front" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+  <ellipse class="p-shadow" cx="151" cy="278" rx="58" ry="7" fill="#0C0616" opacity=".26"/>
+  <g class="p-chrInner">
+    <g class="p-legL">
+      <path d="M134 206 L130 238" stroke="#E8801F" stroke-width="7" stroke-linecap="round" fill="none"/>
+      <g class="p-shinL">
+        <path d="M130 238 L128 264" stroke="#E8801F" stroke-width="7" stroke-linecap="round" fill="none"/>
+        <g class="p-footL"><path d="M128 261 L110 274 L146 274 Z" fill="#E8801F"/></g>
+      </g>
+    </g>
+    <g class="p-legR">
+      <path d="M168 206 L172 238" stroke="#E8801F" stroke-width="7" stroke-linecap="round" fill="none"/>
+      <g class="p-shinR">
+        <path d="M172 238 L174 264" stroke="#E8801F" stroke-width="7" stroke-linecap="round" fill="none"/>
+        <g class="p-footR"><path d="M174 261 L156 274 L192 274 Z" fill="#E8801F"/></g>
+      </g>
+    </g>
+    <g class="p-upper">
+      <g class="p-body"><ellipse cx="151" cy="164" rx="52" ry="46" fill="#FFF6E8"/></g>
+      <g class="p-neck">
+        <path d="M151 132 L151 72" stroke="#FFF6E8" stroke-width="24" stroke-linecap="round" fill="none"/>
+        <g class="p-head">
+          <ellipse cx="151" cy="48" rx="19" ry="21" fill="#FFF6E8"/>
+          <path d="M143 56 L151 74 L159 56 Z" fill="#E8801F"/>
+          <circle cx="142" cy="40" r="3.4" fill="#241338"/>
+          <circle cx="160" cy="40" r="3.4" fill="#241338"/>
+          <ellipse class="lidL" cx="142" cy="40" rx="4.2" ry="4.2" fill="#FFF6E8"/>
+          <ellipse class="lidR" cx="160" cy="40" rx="4.2" ry="4.2" fill="#FFF6E8"/>
+        </g>
+      </g>
+      <g class="p-wingL">
+        <path d="M114 140 C 98 158, 95 186, 106 204 C 118 194, 122 164, 114 140 Z" fill="#E3DEEE"/>
+      </g>
+      <g class="p-wingR">
+        <path d="M188 140 C 204 158, 207 186, 196 204 C 184 194, 180 164, 188 140 Z" fill="#E3DEEE"/>
+      </g>
+    </g>
+  </g>
+
+  <g fill="#FFC46B">
+    <path class="sparkle" d="M40 70 l5 13 13 5 -13 5 -5 13 -5-13 -13-5 13-5z" style="transform-origin:40px 88px"/>
+    <path class="sparkle" d="M258 58 l4 11 11 4 -11 4 -4 11 -4-11 -11-4 11-4z" style="transform-origin:258px 73px"/>
+    <path class="sparkle" d="M270 196 l4 10 10 4 -10 4 -4 10 -4-10 -10-4 10-4z" style="transform-origin:270px 210px"/>
+    <path class="sparkle" d="M32 208 l4 10 10 4 -10 4 -4 10 -4-10 -10-4 10-4z" style="transform-origin:32px 222px"/>
+  </g>
+</svg>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="kicker">Розімнись · щогодини</div>
+    <h1 class="brand">Потя<em>гусь</em></h1>
+    <div class="taunt" id="taunt">Твій хребет щойно подав заяву на звільнення.</div>
+
+    <!-- idle: nothing runs until she stands up and clicks -->
+    <div class="only-idle">
+      <div class="card">
+        <div class="ring"><svg viewBox="0 0 100 100"><circle class="track" cx="50" cy="50" r="44"/></svg><div class="num" id="idleSec">30</div></div>
+        <div><div class="exname" id="exnameIdle">Дотягнись до стелі</div>
+             <div class="exsub">Далі · відлік почнеться після кліку</div></div>
+      </div>
+      <div class="actions">
+        <button class="btn-primary pulse" id="btnStart">Встаю — поїхали</button>
+        <button class="btn-ghost" id="btnSnooze">Ще 5 хв</button>
+        <button class="btn-skip" id="btnSkip">пропустити цю годину</button>
+      </div>
+      <div class="hint">Клацни будь-де або натисни <kbd>пробіл</kbd>, коли вже стоїш.</div>
+    </div>
+
+    <!-- countdown -->
+    <div class="only-count count" id="count"><div><b id="countNum">3</b><small>приготуйся</small></div></div>
+
+    <!-- active -->
+    <div class="only-active">
+      <div class="card">
+        <div class="ring" id="ring">
+          <svg viewBox="0 0 100 100"><circle class="track" cx="50" cy="50" r="44"/><circle class="prog" id="prog" cx="50" cy="50" r="44"/></svg>
+          <div class="num" id="num">30</div>
+        </div>
+        <div><div class="exname" id="exname">Дотягнись до стелі</div><div class="exsub" id="exsub">Вправа · 30 секунд</div></div>
+      </div>
+      <ol class="steps" id="steps"></ol>
+      <div class="actions">
+        <button class="btn-primary good" id="btnDone" hidden>Готово ✓</button>
+        <button class="btn-ghost" id="btnSnooze2">Ще 5 хв</button>
+        <button class="btn-skip" id="btnSkip2">пропустити цю годину</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="foot"><span id="footText">Сьогодні: 0</span><span class="dots" id="dots"></span></div>
+<div class="clock" id="clock"></div>
+<div class="confetti" id="confetti"></div>
+<div class="bye" id="bye"><p id="byeText"></p></div>
+
+<script>
+"use strict";
+
+/* ---------- bridge to the native app (no-op in a plain browser) ---------- */
+const native = (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.rozimnys) || null;
+function send(action, extra){
+  const msg = Object.assign({action}, extra || {});
+  if (native) native.postMessage(msg); else console.log("[rozimnys]", msg);
+}
+
+/* ---------- fallback payload so the file previews standalone ---------- */
+let DATA = {
+  taunt: "Твій хребет щойно подав заяву на звільнення.",
+  doneLine: "Оце інша справа. Твій хребет відкликав заяву.",
+  name: "Дотягнись до стелі", pose: "reach", seconds: 30,
+  steps: ["Встань. Так, зараз.","Зчепи пальці в замок і виштовхни долоні вгору.","Тягнись маківкою за руками. Дихай."],
+  todayCount: 0, goal: 8, muted: false
+};
+
+const $ = id => document.getElementById(id);
+const VIEW = {
+  reach:"side", neck:"front", shoulders:"front", chest:"front", twist:"front",
+  lunge:"front", squat:"front", wrists:"side", calf:"side", hip:"side",
+  eyes:"side", catcow:"side", sidebend:"front", walk:"side", jacks:"front",
+  knees:"front", neckroll:"side", ankles:"side", chintuck:"side",
+  wingcircles:"front", backbend:"side", breathe:"front", toes:"side", shake:"front"
+};
+
+let state = "idle", total = 30, left = 30, tick = null, finished = false, closing = false, startedAt = null;
+
+function setState(s){ state = s; document.body.dataset.state = s; }
+
+/* video clips: web/clips/<name>.mp4 — when one exists it replaces the rig for that pose */
+/* v2: video clips replace the SVG rig. Off in v1 — flip to true and put files in web/clips/ */
+const USE_CLIPS = false;
+const clip = $("clip"), slot = $("gooseSlot");
+let clipToken = 0;
+function useClip(name){
+  if (!USE_CLIPS) return;
+  const token = ++clipToken;
+  slot.classList.remove("has-clip");
+  clip.pause();
+  if (!name){ clip.removeAttribute("src"); return; }
+  clip.onerror = () => { if (token === clipToken) slot.classList.remove("has-clip"); };
+  clip.oncanplay = () => {
+    if (token !== clipToken) return;
+    slot.classList.add("has-clip");
+    clip.play().catch(() => {});
+  };
+  clip.src = "clips/" + name + ".mp4";
+  clip.load();
+}
+
+/* which drawing is on stage, and which pose it holds */
+function setPose(pose){
+  const view = VIEW[pose] || "side";
+  document.querySelectorAll(".goose").forEach(g => {
+    const base = g.id === "chrFront" ? "goose front" : "goose side";
+    const mine = g.id === (view === "front" ? "chrFront" : "chrSide");
+    g.setAttribute("class", base + (mine ? " active" + (pose ? " pose-" + pose : "") : ""));
+  });
+}
+
+function render(){
+  $("taunt").textContent     = DATA.taunt;
+  $("exnameIdle").textContent= DATA.name;
+  $("idleSec").textContent   = DATA.seconds;
+  $("exname").textContent    = DATA.name;
+  $("exsub").textContent     = "Вправа · " + DATA.seconds + " секунд";
+
+  $("steps").innerHTML = "";
+  DATA.steps.forEach((s,i) => {
+    const li = document.createElement("li");
+    const b = document.createElement("b"); b.textContent = i+1;
+    const sp = document.createElement("span"); sp.textContent = s;
+    li.append(b, sp); $("steps").appendChild(li);
+  });
+
+  const goal = DATA.goal || 8;
+  $("dots").innerHTML = "";
+  for (let i = 0; i < goal; i++){
+    const d = document.createElement("i"); if (i < DATA.todayCount) d.classList.add("on"); $("dots").appendChild(d);
+  }
+  $("footText").textContent = "Сьогодні розім'ялась: " + DATA.todayCount + " / " + goal;
+
+  total = left = DATA.seconds;
+  $("num").textContent = left;
+  const circ = 2*Math.PI*44, prog = $("prog");
+  prog.style.strokeDasharray = circ; prog.style.strokeDashoffset = circ;
+
+  // the goose waits with you: neutral stance in the pose's own view, no exercise yet
+  setPose(null);
+  const view = VIEW[DATA.pose] || "side";
+  document.getElementById(view === "front" ? "chrFront" : "chrSide").classList.add("active");
+  useClip("idle");
+  setState("idle");
+}
+
+/* ---------- start: click → 3-2-1 → exercise ---------- */
+function start(){
+  if (state !== "idle" || closing) return;
+  setState("countdown");
+  let n = 3;
+  const show = () => {
+    const el = $("countNum");
+    el.textContent = n; el.style.animation = "none"; void el.offsetWidth; el.style.animation = "";
+    chime([n === 1 ? 880 : 660], 0);
+  };
+  show();
+  const iv = setInterval(() => {
+    n--;
+    if (n === 0){ clearInterval(iv); begin(); return; }
+    show();
+  }, 1000);
+}
+
+function begin(){
+  setState("active");
+  startedAt = Date.now();
+  setPose(DATA.pose);
+  useClip(DATA.pose);
+  chime([523.25, 659.25, 783.99], 0.11);
+  startTimer();
+}
+
+function startTimer(){
+  clearInterval(tick);
+  const circ = 2*Math.PI*44;
+  requestAnimationFrame(() => { $("prog").style.strokeDashoffset = 0; });
+  tick = setInterval(() => {
+    left--;
+    $("num").textContent = Math.max(left, 0);
+    $("prog").style.strokeDashoffset = circ * (left / total);
+    if (left <= 0){ clearInterval(tick); complete(); }
+  }, 1000);
+}
+
+function complete(){
+  if (finished) return;
+  finished = true;
+  $("ring").classList.add("done");
+  $("num").textContent = "✓";
+  $("btnDone").hidden = false;
+  document.querySelector(".goose.active").classList.add("celebrate");
+  chime([660, 880, 1174], 0.16);
+  confetti();
+  setTimeout(() => { if (!closing) finish("done"); }, 3200);
+}
+
+function finish(reason){
+  if (closing) return;
+  closing = true;
+  clearInterval(tick);
+  $("byeText").textContent =
+      reason === "done"   ? DATA.doneLine
+    : reason === "snooze" ? "Добре. Але я повернусь за 5 хвилин."
+    :                       "Ну гаразд. Але я все бачив.";
+  $("bye").classList.add("show");
+  const elapsed = startedAt ? Math.round((Date.now() - startedAt)/1000) : 0;
+  setTimeout(() => send(reason, {elapsed, started: !!startedAt}), 1150);
+}
+
+/* ---------- sound ---------- */
+let actx = null;
+function chime(notes, gap){
+  if (DATA.muted) return;
+  try{
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    notes.forEach((f, i) => {
+      const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime + i*gap;
+      o.type = "sine"; o.frequency.value = f;
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.16, t+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t+0.55);
+      o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t+0.6);
+    });
+  }catch(e){}
+}
+
+function confetti(){
+  const box = $("confetti"), colors = ["#E8801F","#F5A94B","#FFF1B8","#8FC072","#FFFFFF"];
+  for (let i = 0; i < 64; i++){
+    const c = document.createElement("i");
+    c.style.left = Math.random()*100 + "vw"; c.style.background = colors[i % colors.length];
+    c.style.animationDuration = (2.4 + Math.random()*1.9) + "s"; c.style.animationDelay = (Math.random()*0.65) + "s";
+    box.appendChild(c);
+  }
+  setTimeout(() => box.innerHTML = "", 6000);
+}
+
+function clock(){ const d = new Date();
+  $("clock").textContent = String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0"); }
+
+/* ---------- wiring ---------- */
+$("btnStart").onclick   = e => { e.stopPropagation(); start(); };
+$("stage").addEventListener("click", e => { if (state === "idle" && !e.target.closest("button")) start(); });
+window.addEventListener("keydown", e => { if ((e.code === "Space" || e.code === "Enter") && state === "idle"){ e.preventDefault(); start(); } });
+$("btnDone").onclick    = () => finish("done");
+$("btnSnooze").onclick  = e => { e.stopPropagation(); finish("snooze"); };
+$("btnSnooze2").onclick = () => finish("snooze");
+$("btnSkip").onclick    = e => { e.stopPropagation(); finish("skip"); };
+$("btnSkip2").onclick   = () => finish("skip");
+
+setTimeout(() => chime([523.25, 659.25], 0.13), 420);
+clock(); setInterval(clock, 15000);
+
+window.rozimnysInit = function(payload){ DATA = Object.assign(DATA, payload || {}); render(); };
+setTimeout(() => { if (document.body.dataset.state === "idle" && !$("steps").children.length) render(); }, 260);
+</script>
+</body>
+</html>

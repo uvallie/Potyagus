@@ -1,0 +1,191 @@
+#!/bin/bash
+# Розімнись — керування нагадувачем
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+APP="$ROOT/Розімнись.app"
+BIN="$APP/Contents/MacOS/rozimnys"
+LABEL="com.alina.rozimnys"
+PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
+SUPPORT="$HOME/Library/Application Support/Rozimnys"
+CONFIG="$SUPPORT/config.json"
+HISTORY="$SUPPORT/history.jsonl"
+PAUSE="$SUPPORT/paused-until"
+LOGS="$ROOT/logs"
+
+mkdir -p "$SUPPORT" "$LOGS"
+
+die(){ echo "✗ $*" >&2; exit 1; }
+need_build(){ [ -x "$BIN" ] || die "застосунок не зібрано — запусти: ./build.sh"; }
+
+write_plist(){
+  cat > "$PLIST" <<PL
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>$LABEL</string>
+  <key>ProgramArguments</key>
+  <array><string>$BIN</string></array>
+  <key>StartCalendarInterval</key>
+  <dict><key>Minute</key><integer>0</integer></dict>
+  <key>RunAtLoad</key><false/>
+  <key>ProcessType</key><string>Interactive</string>
+  <key>StandardOutPath</key><string>$LOGS/agent.out.log</string>
+  <key>StandardErrorPath</key><string>$LOGS/agent.err.log</string>
+</dict>
+</plist>
+PL
+}
+
+ensure_config(){
+  [ -f "$CONFIG" ] || cat > "$CONFIG" <<'JSON'
+{
+  "startHour": 9,
+  "endHour": 21,
+  "weekdaysOnly": false,
+  "goal": 8,
+  "skipDuringCalls": true,
+  "callRetryMinutes": 5,
+  "callRetryWindowMinutes": 45,
+  "blockApps": ["us.zoom.xos", "com.microsoft.teams2", "com.apple.FaceTime",
+                "com.hnc.Discord", "com.apple.QuickTimePlayerX"]
+}
+JSON
+}
+
+cmd_install(){
+  command -v swiftc >/dev/null || die "потрібен Swift: xcode-select --install"
+  "$ROOT/build.sh"
+  ensure_config; write_plist
+  launchctl bootout "gui/$UID/$LABEL" 2>/dev/null || true
+  launchctl bootstrap "gui/$UID" "$PLIST"
+  echo "✓ встановлено. Потягусь приходитиме щогодини о :00"
+  echo "  налаштування: $CONFIG"
+}
+
+cmd_uninstall(){
+  launchctl bootout "gui/$UID/$LABEL" 2>/dev/null || true
+  rm -f "$PLIST"
+  echo "✓ вимкнено й видалено з автозапуску"
+}
+
+cmd_start(){ [ -f "$PLIST" ] || die "спочатку: rozimnys install"
+  launchctl bootstrap "gui/$UID" "$PLIST" 2>/dev/null || launchctl kickstart "gui/$UID/$LABEL"
+  echo "✓ увімкнено"; }
+
+cmd_stop(){ launchctl bootout "gui/$UID/$LABEL" 2>/dev/null || true; echo "✓ зупинено"; }
+
+cmd_now(){ need_build; open -n "$APP" --args --force; echo "✓ Потягусь виходить на сцену"; }
+
+cmd_check(){ need_build; echo -n "Зараз: "; "$BIN" --check; }
+
+cmd_devices(){ need_build; "$BIN" --devices; }
+
+cmd_pause(){
+  local mins="${1:-60}"
+  [[ "$mins" =~ ^[0-9]+$ ]] || die "вкажи кількість хвилин, напр.: rozimnys pause 90"
+  python3 -c "import time,sys; open(sys.argv[1],'w').write(str(time.time()+int(sys.argv[2])*60))" "$PAUSE" "$mins"
+  echo "✓ пауза на $mins хв — до $(date -v+${mins}M '+%H:%M')"
+}
+
+cmd_resume(){ rm -f "$PAUSE"; echo "✓ пауза знята"; }
+
+cmd_status(){
+  echo "Розімнись"
+  echo "─────────"
+  if launchctl print "gui/$UID/$LABEL" >/dev/null 2>&1; then
+    echo "  агент:      ✓ активний (щогодини о :00)"
+  else
+    echo "  агент:      ✗ не завантажений"
+  fi
+  [ -x "$BIN" ] && echo "  застосунок: ✓ зібрано" || echo "  застосунок: ✗ не зібрано"
+  if [ -f "$PAUSE" ]; then
+    python3 - "$PAUSE" <<'PY'
+import sys, time, datetime
+t = float(open(sys.argv[1]).read().strip())
+if t > time.time():
+    print("  пауза:      ⏸  до " + datetime.datetime.fromtimestamp(t).strftime("%H:%M"))
+else:
+    print("  пауза:      —")
+PY
+  else
+    echo "  пауза:      —"
+  fi
+  [ -f "$CONFIG" ] && echo "  конфіг:     $CONFIG"
+  echo
+  cmd_stats
+}
+
+cmd_stats(){
+  [ -f "$HISTORY" ] || { echo "Історія порожня — ще жодного нагадування."; return; }
+  python3 - "$HISTORY" <<'PY'
+import sys, json, datetime, collections
+rows=[]
+for line in open(sys.argv[1], encoding="utf-8"):
+    line=line.strip()
+    if line:
+        try: rows.append(json.loads(line))
+        except: pass
+
+def day(r): return datetime.date.fromtimestamp(r["ts"])
+done = [r for r in rows if r.get("reason")=="done"]
+today = datetime.date.today()
+
+by_day = collections.Counter(day(r) for r in done)
+print(f"Сьогодні розім'ялась:  {by_day.get(today,0)}")
+print(f"Усього:                {len(done)}")
+
+# streak of consecutive days with at least one stretch
+streak, d = 0, today
+if by_day.get(today, 0) == 0:
+    d = today - datetime.timedelta(days=1)
+while by_day.get(d, 0) > 0:
+    streak += 1
+    d -= datetime.timedelta(days=1)
+print(f"Серія днів поспіль:    {streak}")
+
+reasons = collections.Counter(r.get("reason") for r in rows)
+parts = [f"{k}: {v}" for k, v in reasons.most_common() if k]
+if parts: print("Реакції:               " + ", ".join(parts))
+
+fav = collections.Counter(r.get("name") for r in done if r.get("name"))
+if fav: print("Найчастіша вправа:     " + fav.most_common(1)[0][0])
+PY
+}
+
+cmd_config(){ ensure_config; "${EDITOR:-open -e}" "$CONFIG"; }
+
+case "${1:-help}" in
+  install)   cmd_install ;;
+  uninstall) cmd_uninstall ;;
+  start)     cmd_start ;;
+  stop)      cmd_stop ;;
+  now)       cmd_now ;;
+  check)     cmd_check ;;
+  devices)   cmd_devices ;;
+  pause)     shift; cmd_pause "${1:-60}" ;;
+  resume)    cmd_resume ;;
+  status)    cmd_status ;;
+  stats)     cmd_stats ;;
+  config)    cmd_config ;;
+  build)     "$ROOT/build.sh" ;;
+  *)
+cat <<'HELP'
+Розімнись — Потягусь блокує екран щогодини, поки ти не розімнешся.
+
+  rozimnys install      зібрати застосунок і поставити на автозапуск (щогодини о :00)
+  rozimnys now          викликати Потягуся просто зараз
+  rozimnys check        сказати, чи вийшов би зараз (не чіпаючи екран)
+  rozimnys devices      показати стан мікрофона й динаміків
+  rozimnys pause 90     пауза на 90 хвилин
+  rozimnys resume       зняти паузу
+  rozimnys status       статус + статистика
+  rozimnys stats        лише статистика
+  rozimnys stop|start   вимкнути / увімкнути агента
+  rozimnys config       відкрити налаштування (години, ціль, блоклист)
+  rozimnys build        перезібрати застосунок
+  rozimnys uninstall    прибрати з автозапуску
+HELP
+    ;;
+esac

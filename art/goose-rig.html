@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<title>Потягусь — риг</title>
+<style>
+  body{margin:0;padding:26px;background:#1a1029;color:#E4D8FB;
+       font:14px/1.5 -apple-system,BlinkMacSystemFont,sans-serif}
+  h1{font-size:20px;margin:0 0 4px;color:#FFC46B}
+  p.sub{margin:0 0 18px;color:#B9A6DA}
+  .hero{display:flex;gap:20px;align-items:center;margin-bottom:26px;flex-wrap:wrap}
+  .hero .box{background:#241338;border-radius:16px;width:300px}
+  .grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;max-width:1300px}
+  .cell{position:relative;background:#241338;border-radius:10px}
+  .cell b{position:absolute;left:8px;bottom:6px;font-weight:500;font-size:11px;color:#B9A6DA}
+  .cell i{position:absolute;right:8px;top:6px;font-style:normal;font-size:10px;
+          color:#6E5C90;letter-spacing:.08em}
+  svg.goose{display:block;width:100%;height:auto;overflow:visible}
+
+  /* ================= RIG ================= */
+  .goose *{transform-box:view-box}
+  .goose #chrInner,.goose #upper,.goose #body,.goose #neck,.goose #head,
+  .goose #wing,.goose #wingL,.goose #wingR,.goose #tail,
+  .goose #legL,.goose #legR,.goose #shinL,.goose #shinR,
+  .goose #footL,.goose #footR{transition:transform .5s cubic-bezier(.3,.9,.3,1)}
+
+  /* --- side view pivots --- */
+  .side #chrInner{transform-origin:180px 240px}
+  .side #upper   {transform-origin:180px 205px}
+  .side #body    {transform-origin:180px 200px}
+  .side #neck    {transform-origin:134px 150px}
+  .side #head    {transform-origin:86px 88px}
+  .side #wing    {transform-origin:172px 157px}
+  .side #tail    {transform-origin:236px 152px}
+  .side #legL    {transform-origin:198px 180px}
+  .side #legR    {transform-origin:162px 180px}
+  .side #shinL   {transform-origin:202px 206px}
+  .side #shinR   {transform-origin:158px 206px}
+  .side #footL   {transform-origin:200px 228px}
+  .side #footR   {transform-origin:152px 228px}
+  .side #eye     {transition:transform .4s ease}
+
+  /* --- front view pivots --- */
+  .front #chrInner{transform-origin:151px 266px}
+  .front #upper   {transform-origin:151px 208px}
+  .front #body    {transform-origin:151px 208px}
+  .front #neck    {transform-origin:151px 132px}
+  .front #head    {transform-origin:151px 68px}
+  .front #wingL   {transform-origin:114px 140px}
+  .front #wingR   {transform-origin:188px 140px}
+  .front #legL    {transform-origin:134px 206px}
+  .front #legR    {transform-origin:168px 206px}
+  .front #shinL   {transform-origin:130px 238px}
+  .front #shinR   {transform-origin:172px 238px}
+  .front #footL   {transform-origin:128px 264px}
+  .front #footR   {transform-origin:174px 264px}
+
+  /* always alive */
+  .goose #chrInner{animation:breath 3.6s ease-in-out infinite}
+  @keyframes breath{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.025) translateY(-3px)}}
+  .side #tail{animation:wag 2.4s ease-in-out infinite}
+  @keyframes wag{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(7deg)}}
+  .side .lid{animation:blink 5.4s infinite;transform-origin:67px 74px}
+  .front .lidL{animation:blink 5.4s infinite;transform-origin:142px 40px}
+  .front .lidR{animation:blink 5.4s infinite;transform-origin:160px 40px}
+  @keyframes blink{0%,95.5%,100%{transform:scaleY(0)}96.6%,98.6%{transform:scaleY(1)}}
+
+  /* ============ SIDE POSES ============ */
+
+  /* 1. reach — up on tiptoes, wing to the ceiling */
+  .pose-reach #wing{animation:reachWing 2.4s ease-in-out infinite}
+  .pose-reach #neck{animation:reachNeck 2.4s ease-in-out infinite}
+  .pose-reach #chrInner{animation:reachBody 2.4s ease-in-out infinite}
+  @keyframes reachWing{0%,100%{transform:rotate(-34deg)}55%{transform:rotate(-64deg) scaleX(1.2)}}
+  @keyframes reachNeck{0%,100%{transform:rotate(14deg)}55%{transform:rotate(46deg) scaleY(1.16)}}
+  @keyframes reachBody{0%,100%{transform:translateY(0) scaleY(1)}55%{transform:translateY(-24px) scaleY(1.09)}}
+
+  /* 6. side lunges — wide stance, weight shifting from one bent knee to the other */
+  .pose-lunge #upper{animation:fLungeUp 3.4s ease-in-out infinite}
+  .pose-lunge #legL{animation:fLungeLegL 3.4s ease-in-out infinite}
+  .pose-lunge #legR{animation:fLungeLegR 3.4s ease-in-out infinite}
+  .pose-lunge #shinL{animation:fLungeShinL 3.4s ease-in-out infinite}
+  .pose-lunge #shinR{animation:fLungeShinR 3.4s ease-in-out infinite}
+  .pose-lunge #wingL{transform:rotate(78deg) translate(14px,6px)}
+  .pose-lunge #wingR{transform:rotate(-78deg) translate(-14px,6px)}
+  @keyframes fLungeUp{0%,100%{transform:translate(0,10px)}25%{transform:translate(-26px,26px)}75%{transform:translate(26px,26px)}}
+  @keyframes fLungeLegL{0%,100%{transform:rotate(30deg)}25%{transform:rotate(48deg)}75%{transform:rotate(18deg)}}
+  @keyframes fLungeLegR{0%,100%{transform:rotate(-30deg)}25%{transform:rotate(-18deg)}75%{transform:rotate(-48deg)}}
+  @keyframes fLungeShinL{0%,100%{transform:rotate(-30deg)}25%{transform:rotate(-62deg)}75%{transform:rotate(-12deg)}}
+  @keyframes fLungeShinR{0%,100%{transform:rotate(30deg)}25%{transform:rotate(12deg)}75%{transform:rotate(62deg)}}
+
+  /* 23. toes — wing tip pinned to the foot and held there */
+  .pose-toes #upper{animation:toesUp 4s ease-in-out infinite}
+  .pose-toes #neck{animation:toesNeck 4s ease-in-out infinite}
+  .pose-toes #wing{animation:toesWing 4s ease-in-out infinite}
+  .pose-toes #legR{transform:rotate(0)}
+  @keyframes toesUp{0%,100%{transform:rotate(-16deg)}55%{transform:rotate(-34deg)}}
+  @keyframes toesNeck{0%,100%{transform:rotate(-34deg)}55%{transform:rotate(-56deg)}}
+  @keyframes toesWing{0%,100%{transform:rotate(96deg) scaleX(.94)}55%{transform:rotate(114deg) scaleX(1.02)}}
+
+  /* 12. cat-cow — wing planted on the floor, back arching over it */
+  .pose-catcow #chrInner{transform:translateY(14px)}
+  .pose-catcow #upper{animation:ccUpper 3.8s ease-in-out infinite}
+  .pose-catcow #wing{animation:ccWing 3.8s ease-in-out infinite}
+  .pose-catcow #neck{animation:ccNeck 3.8s ease-in-out infinite}
+  .pose-catcow #tail{animation:ccTail 3.8s ease-in-out infinite}
+  .pose-catcow #legL{transform:rotate(-12deg)}
+  .pose-catcow #legR{transform:rotate(-12deg)}
+  @keyframes ccUpper{0%,100%{transform:rotate(-6deg)}25%{transform:rotate(2deg)}75%{transform:rotate(-16deg)}}
+  @keyframes ccWing{0%,100%{transform:rotate(126deg) scaleX(1.16)}25%{transform:rotate(118deg) scaleX(1.16)}75%{transform:rotate(136deg) scaleX(1.16)}}
+  @keyframes ccNeck{0%,100%{transform:rotate(-26deg)}25%{transform:rotate(14deg)}75%{transform:rotate(-58deg)}}
+  @keyframes ccTail{0%,100%{transform:rotate(0)}25%{transform:rotate(-24deg)}75%{transform:rotate(26deg)}}
+
+  /* 9. calf — both wings into the wall, back leg driving the heel down */
+  .pose-calf #chrInner{animation:calfLean 2.8s ease-in-out infinite}
+  .pose-calf #wing{transform:rotate(-168deg) scaleX(1.12)}
+  .pose-calf #legL{animation:calfPush 2.8s ease-in-out infinite}
+  .pose-calf #shinL{transform:rotate(-16deg)}
+  .pose-calf #neck{transform:rotate(10deg)}
+  @keyframes calfLean{0%,100%{transform:rotate(-10deg)}50%{transform:rotate(-22deg) translateX(-10px)}}
+  @keyframes calfPush{0%,100%{transform:rotate(34deg)}50%{transform:rotate(52deg)}}
+
+  /* 10. hip — heel pulled up behind, wing holding it */
+  .pose-hip #legL{transform:rotate(22deg)}
+  .pose-hip #shinL{animation:hipShin 3s ease-in-out infinite}
+  .pose-hip #wing{animation:hipWing 3s ease-in-out infinite}
+  .pose-hip #upper{transform:rotate(-6deg)}
+  .pose-hip #neck{transform:rotate(-8deg)}
+  /* wing tip lands on the lifted foot and pulls it in */
+  @keyframes hipShin{0%,100%{transform:rotate(-112deg)}50%{transform:rotate(-136deg)}}
+  @keyframes hipWing{0%,100%{transform:rotate(40deg) scaleX(.82)}50%{transform:rotate(48deg) scaleX(.86)}}
+
+  /* 14. walk */
+  .pose-walk #legL{animation:walkL .9s ease-in-out infinite}
+  .pose-walk #legR{animation:walkR .9s ease-in-out infinite}
+  .pose-walk #shinL{animation:walkShinL .9s ease-in-out infinite}
+  .pose-walk #shinR{animation:walkShinR .9s ease-in-out infinite}
+  .pose-walk #neck{animation:walkNeck .9s ease-in-out infinite}
+  .pose-walk #chrInner{animation:walkBob .45s ease-in-out infinite}
+  @keyframes walkL{0%,100%{transform:rotate(34deg)}50%{transform:rotate(-30deg)}}
+  @keyframes walkR{0%,100%{transform:rotate(-30deg)}50%{transform:rotate(34deg)}}
+  @keyframes walkShinL{0%,100%{transform:rotate(-30deg)}50%{transform:rotate(4deg)}}
+  @keyframes walkShinR{0%,100%{transform:rotate(4deg)}50%{transform:rotate(-30deg)}}
+  @keyframes walkNeck{0%,100%{transform:rotate(-9deg)}50%{transform:rotate(10deg)}}
+  @keyframes walkBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+
+  /* 11. eyes 20-20-20 */
+  .pose-eyes #neck{animation:lookNeck 6s ease-in-out infinite}
+  .pose-eyes #head{animation:lookHead 6s ease-in-out infinite}
+  .pose-eyes #eye{animation:lookEye 6s ease-in-out infinite}
+  .pose-eyes .lid{animation:slowBlink 2.2s infinite}
+  .pose-eyes #wing{transform:rotate(8deg)}
+  /* neck stretched up and forward, gaze lifted to the distance, panning slowly */
+  @keyframes lookNeck{0%,100%{transform:rotate(26deg) scaleY(1.12)}50%{transform:rotate(40deg) scaleY(1.12)}}
+  @keyframes lookHead{0%,100%{transform:rotate(-22deg)}50%{transform:rotate(-34deg)}}
+  @keyframes lookEye{0%,100%{transform:translate(-2px,-3px)}50%{transform:translate(3px,-3px)}}
+  @keyframes slowBlink{0%,80%,100%{transform:scaleY(0)}86%,94%{transform:scaleY(1)}}
+
+  /* 8. wrists — one wing held out, the other bending it back */
+  .pose-wrists #wing{animation:wristWing 2.4s ease-in-out infinite}
+  .pose-wrists #neck{animation:wristNeck 2.4s ease-in-out infinite}
+  @keyframes wristWing{0%,100%{transform:rotate(-20deg) scaleX(1)}50%{transform:rotate(-46deg) scaleX(1.22)}}
+  @keyframes wristNeck{0%,100%{transform:rotate(0)}50%{transform:rotate(-24deg)}}
+
+  /* 17. neck rolls */
+  .pose-neckroll #neck{animation:rollNeck 5s linear infinite}
+  .pose-neckroll #head{animation:rollHead 5s linear infinite}
+  @keyframes rollNeck{0%{transform:rotate(0)}25%{transform:rotate(40deg)}
+    50%{transform:rotate(0) scaleY(.9)}75%{transform:rotate(-44deg)}100%{transform:rotate(0)}}
+  @keyframes rollHead{0%{transform:rotate(0)}25%{transform:rotate(24deg)}
+    50%{transform:rotate(0)}75%{transform:rotate(-26deg)}100%{transform:rotate(0)}}
+
+  /* 19. chin tuck */
+  .pose-chintuck #neck{animation:tuckNeck 3.2s ease-in-out infinite}
+  .pose-chintuck #head{animation:tuckHead 3.2s ease-in-out infinite}
+  @keyframes tuckNeck{0%,100%{transform:rotate(-16deg) translateX(-6px)}50%{transform:rotate(26deg) translateX(10px)}}
+  @keyframes tuckHead{0%,100%{transform:rotate(14deg)}50%{transform:rotate(-24deg)}}
+
+  /* 21. back bend */
+  .pose-backbend #upper{animation:archUp 3.6s ease-in-out infinite}
+  .pose-backbend #neck{animation:archNeck 3.6s ease-in-out infinite}
+  .pose-backbend #wing{animation:archWing 3.6s ease-in-out infinite}
+  @keyframes archUp{0%,100%{transform:rotate(0)}55%{transform:rotate(26deg)}}
+  @keyframes archNeck{0%,100%{transform:rotate(0)}55%{transform:rotate(62deg)}}
+  @keyframes archWing{0%,100%{transform:rotate(0)}55%{transform:rotate(48deg) scaleX(1.15)}}
+
+  /* 18. ankle circles */
+  .pose-ankles #legR{transform:rotate(-34deg)}
+  .pose-ankles #shinR{transform:rotate(-22deg)}
+  .pose-ankles #footR{animation:ankleSpin 2.4s linear infinite}
+  .pose-ankles #wing{transform:rotate(-14deg)}
+  @keyframes ankleSpin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+
+  /* ============ FRONT POSES ============ */
+
+  /* 2. neck — ear to shoulder, reads only from the front */
+  .pose-neck #head{animation:fNeckHead 4.2s ease-in-out infinite}
+  .pose-neck #neck{animation:fNeckNeck 4.2s ease-in-out infinite}
+  @keyframes fNeckHead{0%,100%{transform:rotate(0)}25%{transform:rotate(-34deg)}50%{transform:rotate(0)}75%{transform:rotate(34deg)}}
+  @keyframes fNeckNeck{0%,100%{transform:rotate(0)}25%{transform:rotate(-16deg)}75%{transform:rotate(16deg)}}
+
+  /* 3. shoulders */
+  .pose-shoulders #wingL{animation:fShrugL 2s ease-in-out infinite}
+  .pose-shoulders #wingR{animation:fShrugR 2s ease-in-out infinite}
+  .pose-shoulders #upper{animation:fShrugBody 2s ease-in-out infinite}
+  @keyframes fShrugL{0%,100%{transform:rotate(0)}35%{transform:rotate(46deg)}70%{transform:rotate(-14deg)}}
+  @keyframes fShrugR{0%,100%{transform:rotate(0)}35%{transform:rotate(-46deg)}70%{transform:rotate(14deg)}}
+  @keyframes fShrugBody{0%,100%{transform:translateY(0)}35%{transform:translateY(-12px)}}
+
+  /* 4. chest — both wings swept back, chest open */
+  .pose-chest #wingL{animation:fChestL 3s ease-in-out infinite}
+  .pose-chest #wingR{animation:fChestR 3s ease-in-out infinite}
+  .pose-chest #body{animation:fChestBody 3s ease-in-out infinite}
+  .pose-chest #head{animation:fChestHead 3s ease-in-out infinite}
+  .pose-chest #neck{animation:fChestNeck 3s ease-in-out infinite}
+  @keyframes fChestNeck{0%,100%{transform:scaleY(1)}55%{transform:scaleY(1.1)}}
+  /* wings swing back and foreshorten (scaleX shrinks) — read as arms clasped behind the back */
+  @keyframes fChestL{0%,100%{transform:rotate(0) scaleX(1)}55%{transform:rotate(-34deg) translate(-16px,10px) scaleX(.55)}}
+  @keyframes fChestR{0%,100%{transform:rotate(0) scaleX(1)}55%{transform:rotate(34deg) translate(16px,10px) scaleX(.55)}}
+  @keyframes fChestBody{0%,100%{transform:scaleX(1) translateY(0)}55%{transform:scaleX(1.18) translateY(-6px)}}
+  @keyframes fChestHead{0%,100%{transform:translateY(0) rotate(0)}55%{transform:translateY(-12px) rotate(0)}}
+
+  /* 5. twist — torso turns, wings swing across */
+  .pose-twist #upper{animation:fTwistBody 4.2s ease-in-out infinite}
+  .pose-twist #wingL{animation:fTwistL 4.2s ease-in-out infinite}
+  .pose-twist #wingR{animation:fTwistR 4.2s ease-in-out infinite}
+  .pose-twist #head{animation:fTwistHead 4.2s ease-in-out infinite}
+  @keyframes fTwistBody{0%,100%{transform:scaleX(1) skewX(0)}25%{transform:scaleX(.72) skewX(6deg)}50%{transform:scaleX(1)}75%{transform:scaleX(.72) skewX(-6deg)}}
+  @keyframes fTwistL{0%,100%{transform:rotate(0)}25%{transform:rotate(76deg) translateX(30px)}75%{transform:rotate(-16deg)}}
+  @keyframes fTwistR{0%,100%{transform:rotate(0)}25%{transform:rotate(16deg)}75%{transform:rotate(-76deg) translateX(-30px)}}
+  @keyframes fTwistHead{0%,100%{transform:rotate(0)}25%{transform:rotate(10deg)}75%{transform:rotate(-10deg)}}
+
+  /* 7. squat — knees bend outward, hips drop, feet stay planted */
+  .pose-squat #upper{animation:fSquatUp 2s ease-in-out infinite}
+  .pose-squat #legL{animation:fSquatLegL 2s ease-in-out infinite}
+  .pose-squat #legR{animation:fSquatLegR 2s ease-in-out infinite}
+  .pose-squat #shinL{animation:fSquatShinL 2s ease-in-out infinite}
+  .pose-squat #shinR{animation:fSquatShinR 2s ease-in-out infinite}
+  .pose-squat #footL{animation:fSquatFootL 2s ease-in-out infinite}
+  .pose-squat #footR{animation:fSquatFootR 2s ease-in-out infinite}
+  .pose-squat #wingL{animation:fSquatWingL 2s ease-in-out infinite}
+  .pose-squat #wingR{animation:fSquatWingR 2s ease-in-out infinite}
+  @keyframes fSquatUp{0%,100%{transform:translateY(0)}50%{transform:translateY(26px)}}
+  @keyframes fSquatLegL{0%,100%{transform:rotate(0)}50%{transform:rotate(38deg)}}
+  @keyframes fSquatLegR{0%,100%{transform:rotate(0)}50%{transform:rotate(-38deg)}}
+  @keyframes fSquatShinL{0%,100%{transform:rotate(0)}50%{transform:rotate(-62deg)}}
+  @keyframes fSquatShinR{0%,100%{transform:rotate(0)}50%{transform:rotate(62deg)}}
+  @keyframes fSquatFootL{0%,100%{transform:rotate(0)}50%{transform:rotate(24deg)}}
+  @keyframes fSquatFootR{0%,100%{transform:rotate(0)}50%{transform:rotate(-24deg)}}
+  @keyframes fSquatWingL{0%,100%{transform:rotate(0)}50%{transform:rotate(104deg) translate(10px,4px)}}
+  @keyframes fSquatWingR{0%,100%{transform:rotate(0)}50%{transform:rotate(-104deg) translate(-10px,4px)}}
+
+  /* 13. side bend */
+  .pose-sidebend #chrInner{animation:fSideBody 4.2s ease-in-out infinite}
+  .pose-sidebend #wingL{animation:fSideL 4.2s ease-in-out infinite}
+  .pose-sidebend #wingR{animation:fSideR 4.2s ease-in-out infinite}
+  @keyframes fSideBody{0%,100%{transform:rotate(0)}25%{transform:rotate(-22deg)}75%{transform:rotate(22deg)}}
+  @keyframes fSideL{0%,100%{transform:rotate(0)}25%{transform:rotate(150deg) scaleY(1.1)}75%{transform:rotate(-10deg)}}
+  @keyframes fSideR{0%,100%{transform:rotate(0)}25%{transform:rotate(10deg)}75%{transform:rotate(-150deg) scaleY(1.1)}}
+
+  /* 15. jumping jacks */
+  .pose-jacks #chrInner{animation:fJackBody .8s ease-in-out infinite}
+  .pose-jacks #wingL{animation:fJackL .8s ease-in-out infinite}
+  .pose-jacks #wingR{animation:fJackR .8s ease-in-out infinite}
+  .pose-jacks #legL{animation:fJackLegL .8s ease-in-out infinite}
+  .pose-jacks #legR{animation:fJackLegR .8s ease-in-out infinite}
+  @keyframes fJackBody{0%,100%{transform:translateY(0) scaleY(.95)}50%{transform:translateY(-30px) scaleY(1.06)}}
+  @keyframes fJackL{0%,100%{transform:rotate(0)}50%{transform:rotate(152deg) scaleY(1.12)}}
+  @keyframes fJackR{0%,100%{transform:rotate(0)}50%{transform:rotate(-152deg) scaleY(1.12)}}
+  @keyframes fJackLegL{0%,100%{transform:rotate(0)}50%{transform:rotate(30deg)}}
+  @keyframes fJackLegR{0%,100%{transform:rotate(0)}50%{transform:rotate(-30deg)}}
+
+  /* 16. high knees */
+  .pose-knees #legL{animation:fKneeL .7s ease-in-out infinite}
+  .pose-knees #legR{animation:fKneeR .7s ease-in-out infinite}
+  .pose-knees #shinL{animation:fKneeShinL .7s ease-in-out infinite}
+  .pose-knees #shinR{animation:fKneeShinR .7s ease-in-out infinite}
+  .pose-knees #wingL{animation:fKneeWingL .7s ease-in-out infinite}
+  .pose-knees #wingR{animation:fKneeWingR .7s ease-in-out infinite}
+  .pose-knees #chrInner{animation:fKneeBody .35s ease-in-out infinite}
+  @keyframes fKneeL{0%,100%{transform:rotate(0)}50%{transform:rotate(46deg) translateY(-14px)}}
+  @keyframes fKneeR{0%,100%{transform:rotate(-46deg) translateY(-14px)}50%{transform:rotate(0)}}
+  @keyframes fKneeShinL{0%,100%{transform:rotate(0)}50%{transform:rotate(-72deg)}}
+  @keyframes fKneeShinR{0%,100%{transform:rotate(72deg)}50%{transform:rotate(0)}}
+  @keyframes fKneeWingL{0%,100%{transform:rotate(28deg)}50%{transform:rotate(-16deg)}}
+  @keyframes fKneeWingR{0%,100%{transform:rotate(-16deg)}50%{transform:rotate(28deg)}}
+  @keyframes fKneeBody{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+
+  /* 20. big wing circles */
+  .pose-wingcircles #wingL{animation:fSpinL 2.6s linear infinite}
+  .pose-wingcircles #wingR{animation:fSpinR 2.6s linear infinite}
+  @keyframes fSpinL{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+  @keyframes fSpinR{0%{transform:rotate(0)}100%{transform:rotate(-360deg)}}
+
+  /* 22. deep breath */
+  .pose-breathe #chrInner{animation:fBreathBody 5.2s ease-in-out infinite}
+  .pose-breathe #wingL{animation:fBreathL 5.2s ease-in-out infinite}
+  .pose-breathe #wingR{animation:fBreathR 5.2s ease-in-out infinite}
+  .pose-breathe #neck{animation:fBreathNeck 5.2s ease-in-out infinite}
+  @keyframes fBreathBody{0%,100%{transform:scale(1)}45%{transform:scale(1.14) translateY(-8px)}}
+  @keyframes fBreathL{0%,100%{transform:rotate(0)}45%{transform:rotate(122deg)}}
+  @keyframes fBreathR{0%,100%{transform:rotate(0)}45%{transform:rotate(-122deg)}}
+  @keyframes fBreathNeck{0%,100%{transform:scaleY(1)}45%{transform:scaleY(1.12)}}
+
+  /* 24. shake it out */
+  .pose-shake #chrInner{animation:fShakeBody .32s ease-in-out infinite}
+  .pose-shake #wingL{animation:fShakeL .24s ease-in-out infinite}
+  .pose-shake #wingR{animation:fShakeR .26s ease-in-out infinite}
+  .pose-shake #head{animation:fShakeHead .28s ease-in-out infinite}
+  @keyframes fShakeBody{0%,100%{transform:rotate(-5deg) translateY(0)}50%{transform:rotate(5deg) translateY(-6px)}}
+  @keyframes fShakeL{0%,100%{transform:rotate(-30deg)}50%{transform:rotate(34deg)}}
+  @keyframes fShakeR{0%,100%{transform:rotate(30deg)}50%{transform:rotate(-34deg)}}
+  @keyframes fShakeHead{0%,100%{transform:rotate(-14deg)}50%{transform:rotate(14deg)}}
+
+  /* celebration */
+  .celebrate.side #chrInner{animation:jump .6s cubic-bezier(.3,1.4,.4,1) 3}
+  .celebrate.side #wing{transform:rotate(-78deg) scaleX(1.2)}
+  .celebrate.side #neck{transform:rotate(42deg)}
+  .celebrate.front #chrInner{animation:jump .6s cubic-bezier(.3,1.4,.4,1) 3}
+  .celebrate.front #wingL{transform:rotate(150deg)}
+  .celebrate.front #wingR{transform:rotate(-150deg)}
+  @keyframes jump{0%,100%{transform:translateY(0)}28%{transform:translateY(-44px)}62%{transform:translateY(0) scaleY(.9)}}
+</style>
+</head>
+<body>
+
+<h1>Потягусь — 24 пози, два ракурси</h1>
+<p class="sub">Кадр заморожено на піку руху. Мітка праворуч угорі — який ракурс використано.</p>
+<div class="hero" id="hero"></div>
+<div class="grid" id="grid"></div>
+
+<template id="tplSide">
+<svg class="goose side" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+  <ellipse id="shadow" cx="180" cy="246" rx="66" ry="7" fill="#0C0616" opacity=".26"/>
+  <g id="chrInner">
+    <g id="legL">
+      <path d="M198 180 L202 206" stroke="#C96A16" stroke-width="7" stroke-linecap="round" fill="none"/>
+      <g id="shinL">
+        <path d="M202 206 L200 228" stroke="#C96A16" stroke-width="7" stroke-linecap="round" fill="none"/>
+        <g id="footL"><path d="M200 225 L182 237 L212 237 Z" fill="#C96A16"/></g>
+      </g>
+    </g>
+    <g id="upper">
+      <g id="tail"><path d="M238 137 L270 126 L248 170 Z" fill="#FFF6E8"/></g>
+      <g id="body"><ellipse cx="180" cy="163" rx="70" ry="38" fill="#FFF6E8"/></g>
+      <g id="wing">
+        <path d="M150 152 C 176 135, 224 137, 254 154 C 230 173, 178 177, 150 152 Z" fill="#E3DEEE"/>
+      </g>
+      <g id="neck">
+        <path d="M134 150 C 120 124, 96 93, 76 78" stroke="#FFF6E8" stroke-width="19"
+              stroke-linecap="round" fill="none"/>
+        <g id="head">
+          <ellipse cx="68" cy="75" rx="17" ry="14.5" fill="#FFF6E8"/>
+          <path d="M53 70 L33 80 L53 88 Z" fill="#E8801F"/>
+          <circle cx="45" cy="79" r="1.6" fill="#241338" opacity=".5"/>
+          <g id="eye">
+            <circle cx="67" cy="74" r="3.6" fill="#241338"/>
+            <ellipse class="lid" cx="67" cy="74" rx="4.4" ry="4.4" fill="#FFF6E8"/>
+          </g>
+        </g>
+      </g>
+    </g>
+    <g id="legR">
+      <path d="M162 180 L158 206" stroke="#E8801F" stroke-width="7" stroke-linecap="round" fill="none"/>
+      <g id="shinR">
+        <path d="M158 206 L152 228" stroke="#E8801F" stroke-width="7" stroke-linecap="round" fill="none"/>
+        <g id="footR"><path d="M152 225 L132 237 L162 237 Z" fill="#E8801F"/></g>
+      </g>
+    </g>
+  </g>
+</svg>
+</template>
+
+<template id="tplFront">
+<svg class="goose front" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+  <ellipse id="shadow" cx="151" cy="278" rx="58" ry="7" fill="#0C0616" opacity=".26"/>
+  <g id="chrInner">
+    <g id="legL">
+      <path d="M134 206 L130 238" stroke="#E8801F" stroke-width="7" stroke-linecap="round" fill="none"/>
+      <g id="shinL">
+        <path d="M130 238 L128 264" stroke="#E8801F" stroke-width="7" stroke-linecap="round" fill="none"/>
+        <g id="footL"><path d="M128 261 L110 274 L146 274 Z" fill="#E8801F"/></g>
+      </g>
+    </g>
+    <g id="legR">
+      <path d="M168 206 L172 238" stroke="#E8801F" stroke-width="7" stroke-linecap="round" fill="none"/>
+      <g id="shinR">
+        <path d="M172 238 L174 264" stroke="#E8801F" stroke-width="7" stroke-linecap="round" fill="none"/>
+        <g id="footR"><path d="M174 261 L156 274 L192 274 Z" fill="#E8801F"/></g>
+      </g>
+    </g>
+    <g id="upper">
+      <g id="body"><ellipse cx="151" cy="164" rx="52" ry="46" fill="#FFF6E8"/></g>
+      <g id="neck">
+        <path d="M151 132 L151 72" stroke="#FFF6E8" stroke-width="24" stroke-linecap="round" fill="none"/>
+        <g id="head">
+          <ellipse cx="151" cy="48" rx="19" ry="21" fill="#FFF6E8"/>
+          <path d="M143 56 L151 74 L159 56 Z" fill="#E8801F"/>
+          <circle cx="142" cy="40" r="3.4" fill="#241338"/>
+          <circle cx="160" cy="40" r="3.4" fill="#241338"/>
+          <ellipse class="lidL" cx="142" cy="40" rx="4.2" ry="4.2" fill="#FFF6E8"/>
+          <ellipse class="lidR" cx="160" cy="40" rx="4.2" ry="4.2" fill="#FFF6E8"/>
+        </g>
+      </g>
+      <g id="wingL">
+        <path d="M114 140 C 98 158, 95 186, 106 204 C 118 194, 122 164, 114 140 Z" fill="#E3DEEE"/>
+      </g>
+      <g id="wingR">
+        <path d="M188 140 C 204 158, 207 186, 196 204 C 184 194, 180 164, 188 140 Z" fill="#E3DEEE"/>
+      </g>
+    </g>
+  </g>
+</svg>
+</template>
+
+<script>
+// which drawing each exercise uses
+const VIEW = {
+  reach:"side", neck:"front", shoulders:"front", chest:"front", twist:"front",
+  lunge:"front", squat:"front", wrists:"side", calf:"side", hip:"side",
+  eyes:"side", catcow:"side", sidebend:"front", walk:"side", jacks:"front",
+  knees:"front", neckroll:"side", ankles:"side", chintuck:"side",
+  wingcircles:"front", backbend:"side", breathe:"front", toes:"side", shake:"front"
+};
+const POSES = Object.keys(VIEW);
+const tpl = {side:document.getElementById("tplSide").content,
+             front:document.getElementById("tplFront").content};
+
+function make(pose){
+  const g = tpl[VIEW[pose]].cloneNode(true).firstElementChild;
+  g.classList.add("pose-"+pose);
+  return g;
+}
+
+["catcow","squat","toes","calf"].forEach(p=>{
+  const box=document.createElement("div"); box.className="box";
+  const g=make(p); box.appendChild(g);
+  const l=document.createElement("div");
+  l.style.cssText="text-align:center;padding:6px;color:#B9A6DA;font-size:12px";
+  l.textContent=p;
+  box.appendChild(l);
+  document.getElementById("hero").appendChild(box);
+});
+
+const grid=document.getElementById("grid");
+POSES.forEach(p=>{
+  const cell=document.createElement("div"); cell.className="cell";
+  const b=document.createElement("b"); b.textContent=p;
+  const i=document.createElement("i"); i.textContent=VIEW[p]==="front"?"анфас":"профіль";
+  cell.append(make(p),b,i); grid.appendChild(cell);
+});
+
+window.freeze=(t=0.5)=>document.getAnimations().forEach(a=>{
+  try{a.currentTime=a.effect.getTiming().duration*t;a.pause();}catch(e){}
+});
+</script>
+</body>
+</html>

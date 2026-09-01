@@ -1,0 +1,7 @@
+# build output
+Розімнись.app/
+logs/
+# local dev / OS noise
+.claude/
+.DS_Store
+*.svg.png

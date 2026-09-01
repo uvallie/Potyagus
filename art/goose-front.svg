@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="1024" height="1024">
+  <rect width="300" height="300" fill="#241338"/>
+  <ellipse id="shadow" cx="151" cy="278" rx="58" ry="7" fill="#0C0616" opacity=".26"/>
+  <g id="chrInner">
+    <g id="legL">
+      <path d="M134 206 L130 238" stroke="#E8801F" stroke-width="7" stroke-linecap="round" fill="none"/>
+      <g id="shinL">
+        <path d="M130 238 L128 264" stroke="#E8801F" stroke-width="7" stroke-linecap="round" fill="none"/>
+        <g id="footL"><path d="M128 261 L110 274 L146 274 Z" fill="#E8801F"/></g>
+      </g>
+    </g>
+    <g id="legR">
+      <path d="M168 206 L172 238" stroke="#E8801F" stroke-width="7" stroke-linecap="round" fill="none"/>
+      <g id="shinR">
+        <path d="M172 238 L174 264" stroke="#E8801F" stroke-width="7" stroke-linecap="round" fill="none"/>
+        <g id="footR"><path d="M174 261 L156 274 L192 274 Z" fill="#E8801F"/></g>
+      </g>
+    </g>
+    <g id="upper">
+      <g id="body"><ellipse cx="151" cy="164" rx="52" ry="46" fill="#FFF6E8"/></g>
+      <g id="neck">
+        <path d="M151 132 L151 72" stroke="#FFF6E8" stroke-width="24" stroke-linecap="round" fill="none"/>
+        <g id="head">
+          <ellipse cx="151" cy="48" rx="19" ry="21" fill="#FFF6E8"/>
+          <path d="M143 56 L151 74 L159 56 Z" fill="#E8801F"/>
+          <circle cx="142" cy="40" r="3.4" fill="#241338"/>
+          <circle cx="160" cy="40" r="3.4" fill="#241338"/>
+        </g>
+      </g>
+      <g id="wingL">
+        <path d="M114 140 C 98 158, 95 186, 106 204 C 118 194, 122 164, 114 140 Z" fill="#E3DEEE"/>
+      </g>
+      <g id="wingR">
+        <path d="M188 140 C 204 158, 207 186, 196 204 C 184 194, 180 164, 188 140 Z" fill="#E3DEEE"/>
+      </g>
+    </g>
+  </g>
+</svg>
