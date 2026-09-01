@@ -825,7 +825,7 @@ function complete(){
   $("num").textContent = "✓";
   $("btnDone").hidden = false;
   document.querySelector(".goose.active").classList.add("celebrate");
-  chime([660, 880, 1174], 0.16);
+  honk("done");
   confetti();
   setTimeout(() => { if (!closing) finish("done"); }, 3200);
 }
@@ -845,6 +845,43 @@ function finish(reason){
 
 /* ---------- sound ---------- */
 let actx = null;
+/* ---------- goose voice ---------- */
+// A honk is a nasal buzz: sawtooth + octave, pushed through a moving band-pass
+// "formant", pitch sagging over the note. No samples, no licences, fits the flat art.
+function honkOnce(t0, f0, len, drop){
+  const o1 = actx.createOscillator(), o2 = actx.createOscillator();
+  const bp = actx.createBiquadFilter(), g = actx.createGain();
+  o1.type = "sawtooth"; o2.type = "square";
+  o1.frequency.setValueAtTime(f0, t0);          o1.frequency.exponentialRampToValueAtTime(f0*drop, t0+len);
+  o2.frequency.setValueAtTime(f0*2.01, t0);     o2.frequency.exponentialRampToValueAtTime(f0*2.01*drop, t0+len);
+  bp.type = "bandpass"; bp.Q.value = 3.2;
+  bp.frequency.setValueAtTime(f0*3.4, t0);      bp.frequency.exponentialRampToValueAtTime(f0*2.2, t0+len);
+  g.gain.setValueAtTime(0, t0);
+  g.gain.linearRampToValueAtTime(0.22, t0+0.018);
+  g.gain.setValueAtTime(0.22, t0+len*0.55);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0+len);
+  const o2g = actx.createGain(); o2g.gain.value = 0.35;
+  o1.connect(bp); o2.connect(o2g); o2g.connect(bp); bp.connect(g); g.connect(actx.destination);
+  o1.start(t0); o2.start(t0); o1.stop(t0+len+0.02); o2.stop(t0+len+0.02);
+}
+function honk(kind){
+  if (DATA.muted) return;
+  try{
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    const t = actx.currentTime + 0.02;
+    if (kind === "hello"){                       // "га-ГАК": short, then a longer one a bit higher
+      honkOnce(t,        300, 0.22, 0.86);
+      honkOnce(t + 0.30, 340, 0.36, 0.80);
+    } else if (kind === "done"){                 // three rising honks — a pleased goose
+      honkOnce(t,        290, 0.20, 0.90);
+      honkOnce(t + 0.26, 330, 0.20, 0.90);
+      honkOnce(t + 0.52, 390, 0.42, 0.84);
+    } else {                                     // single grunt
+      honkOnce(t, 280, 0.18, 0.9);
+    }
+  }catch(e){}
+}
+
 function chime(notes, gap){
   if (DATA.muted) return;
   try{
@@ -883,7 +920,7 @@ $("btnSnooze2").onclick = () => finish("snooze");
 $("btnSkip").onclick    = e => { e.stopPropagation(); finish("skip"); };
 $("btnSkip2").onclick   = () => finish("skip");
 
-setTimeout(() => chime([523.25, 659.25], 0.13), 420);
+setTimeout(() => honk("hello"), 1000);   // the goose announces itself
 clock(); setInterval(clock, 15000);
 
 window.rozimnysInit = function(payload){ DATA = Object.assign(DATA, payload || {}); render(); };

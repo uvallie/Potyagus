@@ -404,7 +404,6 @@ final class Controller: NSObject, NSApplicationDelegate, WKScriptMessageHandler,
                 w.animator().alphaValue = 1
             }
         }
-        NSSound(named: "Blow")?.play()
 
         // If it is simply ignored, step aside rather than sit there forever.
         watchdog?.invalidate()
