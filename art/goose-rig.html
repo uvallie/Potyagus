@@ -162,13 +162,19 @@
   @keyframes wristWing{0%,100%{transform:rotate(-20deg) scaleX(1)}50%{transform:rotate(-46deg) scaleX(1.22)}}
   @keyframes wristNeck{0%,100%{transform:rotate(0)}50%{transform:rotate(-24deg)}}
 
-  /* 17. neck rolls */
-  .pose-neckroll #neck{animation:rollNeck 5s linear infinite}
-  .pose-neckroll #head{animation:rollHead 5s linear infinite}
-  @keyframes rollNeck{0%{transform:rotate(0)}25%{transform:rotate(40deg)}
-    50%{transform:rotate(0) scaleY(.9)}75%{transform:rotate(-44deg)}100%{transform:rotate(0)}}
-  @keyframes rollHead{0%{transform:rotate(0)}25%{transform:rotate(24deg)}
-    50%{transform:rotate(0)}75%{transform:rotate(-26deg)}100%{transform:rotate(0)}}
+  /* 17. neck rolls — FRONT view: ear to one shoulder, chin down through the middle, ear to the other */
+  .pose-neckroll #neck{animation:fRollNeck 6s ease-in-out infinite}
+  .pose-neckroll #head{animation:fRollHead 6s ease-in-out infinite}
+  @keyframes fRollNeck{
+    0%,100%{transform:rotate(-38deg)}
+    25%{transform:rotate(0) translateY(14px) scaleY(.88)}
+    50%{transform:rotate(38deg)}
+    75%{transform:rotate(0) translateY(14px) scaleY(.88)}}
+  @keyframes fRollHead{
+    0%,100%{transform:rotate(-20deg)}
+    25%{transform:rotate(0) translateY(6px)}
+    50%{transform:rotate(20deg)}
+    75%{transform:rotate(0) translateY(6px)}}
 
   /* 19. chin tuck */
   .pose-chintuck #neck{animation:tuckNeck 3.2s ease-in-out infinite}
@@ -419,7 +425,7 @@ const VIEW = {
   reach:"side", neck:"front", shoulders:"front", chest:"front", twist:"front",
   lunge:"front", squat:"front", wrists:"side", calf:"side", hip:"side",
   eyes:"side", catcow:"side", sidebend:"front", walk:"side", jacks:"front",
-  knees:"front", neckroll:"side", ankles:"side", chintuck:"side",
+  knees:"front", neckroll:"front", ankles:"side", chintuck:"side",
   wingcircles:"front", backbend:"side", breathe:"front", toes:"side", shake:"front"
 };
 const POSES = Object.keys(VIEW);
