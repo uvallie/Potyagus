@@ -92,8 +92,8 @@ cmd_pause(){
 cmd_resume(){ rm -f "$PAUSE"; echo "✓ пауза знята"; }
 
 cmd_status(){
-  echo "Розімнись"
-  echo "─────────"
+  echo "Потягусь"
+  echo "────────"
   if launchctl print "gui/$UID/$LABEL" >/dev/null 2>&1; then
     echo "  агент:      ✓ активний (щогодини о :00)"
   else
