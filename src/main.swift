@@ -10,7 +10,7 @@ import CoreAudio
 
 let support: URL = {
     let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-    let dir = base.appendingPathComponent("Rozimnys", isDirectory: true)
+    let dir = base.appendingPathComponent("Potyagus", isDirectory: true)
     try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
     return dir
 }()
@@ -321,7 +321,7 @@ final class Controller: NSObject, NSApplicationDelegate, WKScriptMessageHandler,
         }
 
         // A retry loop can still be waiting when the next hour fires; don't stack up.
-        let id = Bundle.main.bundleIdentifier ?? "com.alina.rozimnys"
+        let id = Bundle.main.bundleIdentifier ?? "com.alina.potyagus"
         let mine = ProcessInfo.processInfo.processIdentifier
         if NSRunningApplication.runningApplications(withBundleIdentifier: id)
             .contains(where: { $0.processIdentifier != mine }) {

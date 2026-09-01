@@ -1,4 +1,4 @@
-# Розімнись
+# Potyagus
 
 Щогодини екран заливає лужок, і на ньому стоїть **Потягусь** — нахабний гусь, який зухвало
 коментує твою поставу й не дає працювати, поки ти не розімнешся. Він не просто стоїть поруч:
@@ -20,42 +20,42 @@
 (`xcode-select --install`, якщо його ще немає). Далі:
 
 ```bash
-git clone <repo> ~/Documents/Code/rozimnys
-cd ~/Documents/Code/rozimnys
-./bin/rozimnys install
+git clone https://github.com/uvallie/Potyagus.git ~/Documents/Code/Potyagus
+cd ~/Documents/Code/Potyagus
+./bin/potyagus install
 ```
 
-Одна команда збирає `Розімнись.app` і ставить launchd-агент, який будить Потягуся
+Одна команда збирає `Potyagus.app` і ставить launchd-агент, який будить Потягуся
 **щогодини о :00**. Жодних системних дозволів не просить: ні мікрофона, ні запису екрана —
 детекція дзвінків читає лише стан аудіопристроїв, а це дозволу не потребує.
-Прибрати повністю — `./bin/rozimnys uninstall`.
+Прибрати повністю — `./bin/potyagus uninstall`.
 
 Перевірити просто зараз:
 
 ```bash
-./bin/rozimnys now
+./bin/potyagus now
 ```
 
 ## Команди
 
 | Команда | Що робить |
 |---|---|
-| `rozimnys install` | зібрати + поставити на автозапуск |
-| `rozimnys now` | викликати Потягуся негайно |
-| `rozimnys check` | чи вийшов би зараз — не чіпаючи екран |
-| `rozimnys devices` | стан мікрофона й динаміків (діагностика дзвінків) |
-| `rozimnys pause 90` | пауза на 90 хвилин |
-| `rozimnys resume` | зняти паузу |
-| `rozimnys status` | статус агента + статистика |
-| `rozimnys stats` | скільки разів розім'ялась, серія днів, улюблена вправа |
-| `rozimnys stop` / `start` | вимкнути / увімкнути агента |
-| `rozimnys config` | відкрити налаштування |
-| `rozimnys build` | перезібрати після правок |
-| `rozimnys uninstall` | прибрати з автозапуску |
+| `potyagus install` | зібрати + поставити на автозапуск |
+| `potyagus now` | викликати Потягуся негайно |
+| `potyagus check` | чи вийшов би зараз — не чіпаючи екран |
+| `potyagus devices` | стан мікрофона й динаміків (діагностика дзвінків) |
+| `potyagus pause 90` | пауза на 90 хвилин |
+| `potyagus resume` | зняти паузу |
+| `potyagus status` | статус агента + статистика |
+| `potyagus stats` | скільки разів розім'ялась, серія днів, улюблена вправа |
+| `potyagus stop` / `start` | вимкнути / увімкнути агента |
+| `potyagus config` | відкрити налаштування |
+| `potyagus build` | перезібрати після правок |
+| `potyagus uninstall` | прибрати з автозапуску |
 
 ## Налаштування
 
-`~/Library/Application Support/Rozimnys/config.json`
+`~/Library/Application Support/Potyagus/config.json`
 
 ```json
 {
@@ -93,7 +93,7 @@ Zoom, Google Meet, Teams, Slack huddle, FaceTime — усі вони трима�
 Побачити, що воно бачить:
 
 ```bash
-./bin/rozimnys devices
+./bin/potyagus devices
 ```
 
 Дзвінок не з'їдає годину: поки він іде, Потягусь перевіряє кожні 5 хвилин
@@ -196,14 +196,14 @@ Zoom, Google Meet, Teams, Slack huddle, FaceTime — усі вони трима�
 галявиною позаду, кліп підставляється для пози, у якої є файл, риг лишається запасним.
 Вимкнено одним прапорцем — `USE_CLIPS = false` на початку скрипта.
 
-Щоб увімкнути: `USE_CLIPS = true`, скопіювати `v2/clips` у `web/clips`, `./bin/rozimnys build`.
+Щоб увімкнути: `USE_CLIPS = true`, скопіювати `v2/clips` у `web/clips`, `./bin/potyagus build`.
 Решта 15 вправ — по 26 кредитів на Seedance, ~400 разом, плюс перегенерації.
 
 ## Структура
 
 ```
-rozimnys/
-├── bin/rozimnys        CLI
+Potyagus/
+├── bin/potyagus        CLI
 ├── build.sh            збірка .app
 ├── src/main.swift      нативна оболонка (вікно, launchd, історія, детекція дзвінків)
 ├── web/overlay.html    Потягусь + інтерфейс (SVG-риг, стани, таймер)
@@ -211,17 +211,17 @@ rozimnys/
 ├── art/goose-rig.html  пісочниця: усі 24 пози поруч із оригіналом
 ├── art/candidates/     згенеровані варіанти дизайну (канон — u2.svg)
 ├── v2/                 відео-версія: кліпи, нейтральні кадри, проби (вимкнено)
-└── Розімнись.app       зібраний застосунок (не в git — збирається install'ом)
+└── Potyagus.app       зібраний застосунок (не в git — збирається install'ом)
 ```
 
-Історія пишеться в `~/Library/Application Support/Rozimnys/history.jsonl` — по рядку на подію.
+Історія пишеться в `~/Library/Application Support/Potyagus/history.jsonl` — по рядку на подію.
 
 ## Як додати свою вправу
 
 Дописати об'єкт у `data/exercises.json`, додати CSS-позу з таким же `pose` у `web/overlay.html`
-(секція `CHARACTER POSES`), тоді `./bin/rozimnys build`.
+(секція `CHARACTER POSES`), тоді `./bin/potyagus build`.
 
 ## Змінити зовнішній вигляд
 
 `web/overlay.html` самодостатній — його можна відкрити просто в браузері,
-щоб покрутити дизайн без перезбірки. Потім `./bin/rozimnys build`.
+щоб покрутити дизайн без перезбірки. Потім `./bin/potyagus build`.

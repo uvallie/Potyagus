@@ -1,13 +1,13 @@
 #!/bin/bash
-# Розімнись — керування нагадувачем
+# Potyagus — керування нагадувачем
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-APP="$ROOT/Розімнись.app"
-BIN="$APP/Contents/MacOS/rozimnys"
-LABEL="com.alina.rozimnys"
+APP="$ROOT/Potyagus.app"
+BIN="$APP/Contents/MacOS/potyagus"
+LABEL="com.alina.potyagus"
 PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
-SUPPORT="$HOME/Library/Application Support/Rozimnys"
+SUPPORT="$HOME/Library/Application Support/Potyagus"
 CONFIG="$SUPPORT/config.json"
 HISTORY="$SUPPORT/history.jsonl"
 PAUSE="$SUPPORT/paused-until"
@@ -70,7 +70,7 @@ cmd_uninstall(){
   echo "✓ вимкнено й видалено з автозапуску"
 }
 
-cmd_start(){ [ -f "$PLIST" ] || die "спочатку: rozimnys install"
+cmd_start(){ [ -f "$PLIST" ] || die "спочатку: potyagus install"
   launchctl bootstrap "gui/$UID" "$PLIST" 2>/dev/null || launchctl kickstart "gui/$UID/$LABEL"
   echo "✓ увімкнено"; }
 
@@ -84,7 +84,7 @@ cmd_devices(){ need_build; "$BIN" --devices; }
 
 cmd_pause(){
   local mins="${1:-60}"
-  [[ "$mins" =~ ^[0-9]+$ ]] || die "вкажи кількість хвилин, напр.: rozimnys pause 90"
+  [[ "$mins" =~ ^[0-9]+$ ]] || die "вкажи кількість хвилин, напр.: potyagus pause 90"
   python3 -c "import time,sys; open(sys.argv[1],'w').write(str(time.time()+int(sys.argv[2])*60))" "$PAUSE" "$mins"
   echo "✓ пауза на $mins хв — до $(date -v+${mins}M '+%H:%M')"
 }
@@ -174,18 +174,18 @@ case "${1:-help}" in
 cat <<'HELP'
 Розімнись — Потягусь блокує екран щогодини, поки ти не розімнешся.
 
-  rozimnys install      зібрати застосунок і поставити на автозапуск (щогодини о :00)
-  rozimnys now          викликати Потягуся просто зараз
-  rozimnys check        сказати, чи вийшов би зараз (не чіпаючи екран)
-  rozimnys devices      показати стан мікрофона й динаміків
-  rozimnys pause 90     пауза на 90 хвилин
-  rozimnys resume       зняти паузу
-  rozimnys status       статус + статистика
-  rozimnys stats        лише статистика
-  rozimnys stop|start   вимкнути / увімкнути агента
-  rozimnys config       відкрити налаштування (години, ціль, блоклист)
-  rozimnys build        перезібрати застосунок
-  rozimnys uninstall    прибрати з автозапуску
+  potyagus install      зібрати застосунок і поставити на автозапуск (щогодини о :00)
+  potyagus now          викликати Потягуся просто зараз
+  potyagus check        сказати, чи вийшов би зараз (не чіпаючи екран)
+  potyagus devices      показати стан мікрофона й динаміків
+  potyagus pause 90     пауза на 90 хвилин
+  potyagus resume       зняти паузу
+  potyagus status       статус + статистика
+  potyagus stats        лише статистика
+  potyagus stop|start   вимкнути / увімкнути агента
+  potyagus config       відкрити налаштування (години, ціль, блоклист)
+  potyagus build        перезібрати застосунок
+  potyagus uninstall    прибрати з автозапуску
 HELP
     ;;
 esac
