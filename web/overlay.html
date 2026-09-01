@@ -5,8 +5,6 @@
 <title>Потягусь</title>
 <style>
   :root{
-    --sky-0:#EAF3E1; --sky-1:#D9EBCB;
-    --grass-0:#8FC072; --grass-1:#6EA755; --grass-2:#4F8A3E;
     --ink:#1E3A24; --ink-dim:#587A5B; --ink-faint:#8AA58B;
     --accent:#E8801F; --accent-2:#F5A94B; --good:#2E7D4F;
     --card:rgba(255,255,255,.55);
@@ -17,19 +15,18 @@
   body{
     font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",sans-serif;
     color:var(--ink);
+    /* v2: суцільний лужок того ж зеленого, що й фон відео-кліпів — жодного шва */
     background:
-      radial-gradient(900px 500px at 70% 8%, #FFFFFF 0%, transparent 60%),
-      linear-gradient(180deg, var(--sky-0) 0%, var(--sky-1) var(--horizon),
-                      var(--grass-0) var(--horizon), var(--grass-1) 82%, var(--grass-2) 100%);
+      radial-gradient(60vw 34vh at 18% 92%, rgba(111,166,88,.55), transparent 70%),
+      radial-gradient(48vw 30vh at 84% 78%, rgba(111,166,88,.45), transparent 70%),
+      radial-gradient(40vw 26vh at 60% 100%, rgba(139,190,110,.5), transparent 70%),
+      radial-gradient(70vw 40vh at 30% 4%, rgba(139,190,110,.45), transparent 70%),
+      radial-gradient(36vw 22vh at 92% 12%, rgba(111,166,88,.35), transparent 70%),
+      #7DB262;
     -webkit-user-select:none; user-select:none; cursor:default;
   }
 
   /* ---------- meadow ---------- */
-  .ground{
-    position:fixed;left:0;right:0;top:calc(var(--horizon) - 22px);height:44px;z-index:1;
-    pointer-events:none;
-  }
-  .ground svg{width:100%;height:100%;display:block}
   .tuft{position:fixed;z-index:1;pointer-events:none;width:clamp(40px,4vw,70px);opacity:.9}
   .sun{
     position:fixed;right:clamp(40px,7vw,120px);top:clamp(28px,6vh,70px);z-index:1;
@@ -60,18 +57,19 @@
     width:min(38vw,44vh,560px);
     transform:translate(-50%,-87%);       /* feet at ~87% of the drawing's height */
   }
-  .clearing{position:absolute;inset:-4% -10% -2% -10%;border-radius:50%;background:#7DB262;
-    filter:blur(22px);opacity:0;transition:opacity .5s;pointer-events:none}
-  .clip{display:none;width:100%;aspect-ratio:1;object-fit:cover;position:relative;
-    -webkit-mask-image:radial-gradient(ellipse 60% 64% at 50% 54%, #000 56%, transparent 84%);
-    mask-image:radial-gradient(ellipse 60% 64% at 50% 54%, #000 56%, transparent 84%)}
+  /* v2: <video> лише декодує, на екран іде canvas з хромакеєм — зелений фон кліпу стає прозорим,
+     тож ні швів, ні різниці в кольорі між відео й CSS-фоном (WebKit малює їх різними шляхами) */
+  .clip{position:absolute;width:2px;height:2px;opacity:.01;pointer-events:none}
+  .clipcanvas{display:none;width:100%;aspect-ratio:1;position:relative}
+  .bush{position:fixed;z-index:1;pointer-events:none;width:clamp(120px,13vw,240px)}
   .goose-slot.has-clip{transform:translate(-50%,-80%)}   /* clip square sits lower, mostly on the grass */
-  .goose-slot.has-clip .clearing{opacity:.85}
-  .goose-slot.has-clip .clip{display:block;animation:dropin .7s cubic-bezier(.18,1.4,.5,1) both}
+  .goose-slot.has-clip .clipcanvas{display:block;animation:dropin .7s cubic-bezier(.18,1.4,.5,1) both}
   .goose-slot.has-clip svg.goose{display:none!important}
   svg.goose{display:none;width:100%;height:auto;overflow:visible;
     animation:dropin .7s cubic-bezier(.18,1.4,.5,1) both}
   svg.goose.active{display:block}
+  /* v2: з відео риг не показуємо взагалі — інакше він блимає на старті, поки кліп вантажиться */
+  body.clips svg.goose{display:none!important}
   @keyframes dropin{0%{transform:translateY(-40px);opacity:0}100%{transform:none;opacity:1}}
 
   /* ---------- right panel ---------- */
@@ -522,24 +520,23 @@
 </head>
 <body data-state="idle">
 
-<div class="sun"></div>
-<svg class="cloud" style="left:8vw;top:9vh;width:clamp(90px,10vw,160px)" viewBox="0 0 160 60"><path d="M20 50h110a18 18 0 0 0-8-34 24 24 0 0 0-44-6 20 20 0 0 0-36 14 14 14 0 0 0-22 26z"/></svg>
-<svg class="cloud" style="left:52vw;top:5vh;width:clamp(70px,7vw,120px);animation-delay:-30s" viewBox="0 0 160 60"><path d="M20 50h110a18 18 0 0 0-8-34 24 24 0 0 0-44-6 20 20 0 0 0-36 14 14 14 0 0 0-22 26z"/></svg>
 
-<div class="ground">
-  <svg viewBox="0 0 1600 44" preserveAspectRatio="none">
-    <path fill="#8FC072" d="M0 24 C 60 10, 120 30, 190 20 S 320 8, 400 22 S 560 34, 650 18 S 800 6, 900 22 S 1050 34, 1150 16 S 1300 8, 1400 22 S 1540 30, 1600 20 L1600 44 L0 44 Z"/>
-  </svg>
-</div>
 <svg class="tuft" style="left:6vw;top:calc(var(--horizon) - 30px)" viewBox="0 0 70 40"><path fill="#4F8A3E" d="M4 40 C 8 24, 6 14, 2 4 C 12 10, 18 22, 20 40 Z M22 40 C 24 22, 30 12, 36 2 C 34 16, 32 28, 30 40 Z M40 40 C 44 26, 54 18, 66 12 C 56 22, 50 30, 48 40 Z"/></svg>
 <svg class="tuft" style="left:36vw;top:calc(var(--horizon) - 26px);width:clamp(30px,3vw,52px)" viewBox="0 0 70 40"><path fill="#4F8A3E" d="M4 40 C 8 24, 6 14, 2 4 C 12 10, 18 22, 20 40 Z M22 40 C 24 22, 30 12, 36 2 C 34 16, 32 28, 30 40 Z M40 40 C 44 26, 54 18, 66 12 C 56 22, 50 30, 48 40 Z"/></svg>
 <svg class="tuft" style="right:9vw;top:calc(var(--horizon) - 28px)" viewBox="0 0 70 40"><path fill="#4F8A3E" d="M4 40 C 8 24, 6 14, 2 4 C 12 10, 18 22, 20 40 Z M22 40 C 24 22, 30 12, 36 2 C 34 16, 32 28, 30 40 Z M40 40 C 44 26, 54 18, 66 12 C 56 22, 50 30, 48 40 Z"/></svg>
 
+<svg class="bush" style="left:-2vw;top:calc(var(--horizon) - 9vh)" viewBox="0 0 240 110"><path fill="#6FA658" d="M10 110 C 0 70, 30 40, 60 50 C 70 15, 130 10, 150 45 C 190 30, 240 60, 232 110 Z"/><path fill="#5E9549" opacity=".7" d="M60 110 C 62 82, 95 72, 118 86 C 128 66, 170 70, 178 92 C 196 90, 214 100, 214 110 Z"/></svg>
+<svg class="bush" style="right:-3vw;top:calc(var(--horizon) - 6vh);width:clamp(100px,10vw,190px)" viewBox="0 0 240 110"><path fill="#6FA658" d="M8 110 C 4 66, 44 46, 74 60 C 90 22, 150 24, 162 58 C 200 44, 236 74, 230 110 Z"/><path fill="#5E9549" opacity=".7" d="M50 110 C 56 86, 90 78, 108 92 C 122 76, 160 80, 170 100 C 184 96, 200 102, 202 110 Z"/></svg>
+<svg class="tuft" style="left:22vw;top:calc(var(--horizon) + 9vh);width:clamp(26px,2.6vw,44px);opacity:.7" viewBox="0 0 70 40"><path fill="#5E9549" d="M4 40 C 8 24, 6 14, 2 4 C 12 10, 18 22, 20 40 Z M22 40 C 24 22, 30 12, 36 2 C 34 16, 32 28, 30 40 Z M40 40 C 44 26, 54 18, 66 12 C 56 22, 50 30, 48 40 Z"/></svg>
+<svg class="tuft" style="left:58vw;top:calc(var(--horizon) + 14vh);width:clamp(30px,3vw,52px);opacity:.7" viewBox="0 0 70 40"><path fill="#5E9549" d="M4 40 C 8 24, 6 14, 2 4 C 12 10, 18 22, 20 40 Z M22 40 C 24 22, 30 12, 36 2 C 34 16, 32 28, 30 40 Z M40 40 C 44 26, 54 18, 66 12 C 56 22, 50 30, 48 40 Z"/></svg>
+<svg class="tuft" style="right:24vw;top:calc(var(--horizon) - 14vh);width:clamp(24px,2.4vw,40px);opacity:.6" viewBox="0 0 70 40"><path fill="#5E9549" d="M4 40 C 8 24, 6 14, 2 4 C 12 10, 18 22, 20 40 Z M22 40 C 24 22, 30 12, 36 2 C 34 16, 32 28, 30 40 Z M40 40 C 44 26, 54 18, 66 12 C 56 22, 50 30, 48 40 Z"/></svg>
+<svg class="tuft" style="left:44vw;top:calc(var(--horizon) - 22vh);width:clamp(22px,2.2vw,36px);opacity:.55" viewBox="0 0 70 40"><path fill="#5E9549" d="M4 40 C 8 24, 6 14, 2 4 C 12 10, 18 22, 20 40 Z M22 40 C 24 22, 30 12, 36 2 C 34 16, 32 28, 30 40 Z M40 40 C 44 26, 54 18, 66 12 C 56 22, 50 30, 48 40 Z"/></svg>
+
 <div class="stage" id="stage">
   <div class="charwrap">
     <div class="goose-slot" id="gooseSlot">
-      <div class="clearing"></div>
       <video id="clip" class="clip" muted playsinline loop preload="auto"></video>
+      <canvas id="clipCanvas" class="clipcanvas" width="768" height="768"></canvas>
 <svg id="chrSide" class="goose side" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
   <ellipse class="p-shadow" cx="180" cy="246" rx="66" ry="7" fill="#0C0616" opacity=".26"/>
   <g class="p-chrInner">
@@ -716,20 +713,49 @@ function setState(s){ state = s; document.body.dataset.state = s; }
 
 /* video clips: web/clips/<name>.mp4 — when one exists it replaces the rig for that pose */
 /* v2: video clips replace the SVG rig. Off in v1 — flip to true and put files in web/clips/ */
-const USE_CLIPS = false;
+const USE_CLIPS = true;
+if (USE_CLIPS) document.body.classList.add("clips");
 const clip = $("clip"), slot = $("gooseSlot");
 let clipToken = 0;
+
+/* хромакей: зелений #7DB262 → прозорість, м'який край, щоб пір'я не «різалось» */
+const cv = $("clipCanvas"), cx = cv.getContext("2d", { willReadFrequently: true });
+const SOFT_IN = 22, SOFT_OUT = 58;
+let rafId = 0;
+function drawClip(){
+  rafId = requestAnimationFrame(drawClip);
+  if (clip.readyState < 2) return;
+  if (cv.width !== clip.videoWidth) { cv.width = clip.videoWidth; cv.height = clip.videoHeight; }
+  cx.drawImage(clip, 0, 0, cv.width, cv.height);
+  const img = cx.getImageData(0, 0, cv.width, cv.height), d = img.data;
+  // ключ — середній колір чотирьох кутків цього ж кадру (у кожного кліпу зелений трохи свій)
+  const W = cv.width, H = cv.height, c = [[6,6],[W-7,6],[6,H-7],[W-7,H-7]].map(([x,y]) => (y*W+x)*4);
+  const KEY = [0,1,2].map(k => c.reduce((a,o) => a + d[o+k], 0) / 4);
+  for (let i = 0; i < d.length; i += 4){
+    const dr = d[i]-KEY[0], dg = d[i+1]-KEY[1], db = d[i+2]-KEY[2];
+    const dist = Math.sqrt(dr*dr + dg*dg + db*db);
+    if (dist < SOFT_IN) d[i+3] = 0;
+    else if (dist < SOFT_OUT) {
+      d[i+3] = Math.round(255 * (dist - SOFT_IN) / (SOFT_OUT - SOFT_IN));
+      // деспіл: на краю пір'я не має зеленіти — зелений не вище за середнє червоного й синього
+      const m = Math.max(d[i], d[i+2]);
+      if (d[i+1] > m) d[i+1] = m;
+    }
+  }
+  cx.putImageData(img, 0, 0);
+}
 function useClip(name){
   if (!USE_CLIPS) return;
   const token = ++clipToken;
   slot.classList.remove("has-clip");
   clip.pause();
-  if (!name){ clip.removeAttribute("src"); return; }
+  if (!name){ clip.removeAttribute("src"); cancelAnimationFrame(rafId); rafId = 0; return; }
   clip.onerror = () => { if (token === clipToken) slot.classList.remove("has-clip"); };
   clip.oncanplay = () => {
     if (token !== clipToken) return;
     slot.classList.add("has-clip");
     clip.play().catch(() => {});
+    if (!rafId) drawClip();
   };
   clip.src = "clips/" + name + ".mp4";
   clip.load();
