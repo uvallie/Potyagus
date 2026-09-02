@@ -1,5 +1,7 @@
-// Розімнись — a drawn character that blocks the screen until you stretch.
-// Builds into Розімнись.app; launchd wakes it every hour.
+// Потягусь — a drawn goose that blocks the screen until you stretch.
+// Builds into Potyagus.app. Launched plainly (double-click, or launchd at login) it stays
+// resident in the menu bar, installs its own launch agent and nudges every hour on its own.
+// With --now/--force it shows the overlay once and quits; --check/--devices just print.
 
 import Cocoa
 import WebKit
@@ -140,6 +142,60 @@ func pausedUntil() -> Date? {
     return d > Date() ? d : nil
 }
 
+func setPaused(until: Date?) {
+    if let d = until { try? String(d.timeIntervalSince1970).write(to: pauseURL, atomically: true, encoding: .utf8) }
+    else { try? FileManager.default.removeItem(at: pauseURL) }
+}
+
+// MARK: - Launch agent (the app installs itself)
+
+let agentLabel = "com.alina.potyagus"
+let agentPlistURL = FileManager.default.homeDirectoryForCurrentUser
+    .appendingPathComponent("Library/LaunchAgents/\(agentLabel).plist")
+
+func launchctl(_ args: [String]) -> Int32 {
+    let p = Process(); p.executableURL = URL(fileURLWithPath: "/bin/launchctl"); p.arguments = args
+    p.standardOutput = FileHandle.nullDevice; p.standardError = FileHandle.nullDevice
+    try? p.run(); p.waitUntilExit(); return p.terminationStatus
+}
+
+/// Write the launchd plist for *this* bundle: start at login, keep running, no arguments —
+/// the resident app schedules the hourly nudge itself. Returns true if the file changed.
+@discardableResult
+func installLaunchAgent() -> Bool {
+    let exe = Bundle.main.executableURL?.path ?? CommandLine.arguments[0]
+    let logs = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Logs/Potyagus", isDirectory: true)
+    try? FileManager.default.createDirectory(at: logs, withIntermediateDirectories: true)
+    let plist = """
+    <?xml version="1.0" encoding="UTF-8"?>
+    <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+    <plist version="1.0">
+    <dict>
+      <key>Label</key><string>\(agentLabel)</string>
+      <key>ProgramArguments</key><array><string>\(exe)</string></array>
+      <key>RunAtLoad</key><true/>
+      <key>KeepAlive</key><dict><key>SuccessfulExit</key><false/></dict>
+      <key>ProcessType</key><string>Interactive</string>
+      <key>StandardOutPath</key><string>\(logs.path)/agent.out.log</string>
+      <key>StandardErrorPath</key><string>\(logs.path)/agent.err.log</string>
+    </dict>
+    </plist>
+    """
+    let old = try? String(contentsOf: agentPlistURL, encoding: .utf8)
+    if old == plist { return false }
+    try? FileManager.default.createDirectory(at: agentPlistURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+    try? plist.write(to: agentPlistURL, atomically: true, encoding: .utf8)
+    // Load it so the job exists; if we're already the process launchd knows about, this is a no-op.
+    let uid = getuid()
+    _ = launchctl(["bootstrap", "gui/\(uid)", agentPlistURL.path])
+    return true
+}
+
+func removeLaunchAgent() {
+    _ = launchctl(["bootout", "gui/\(getuid())/\(agentLabel)"])
+    try? FileManager.default.removeItem(at: agentPlistURL)
+}
+
 /// True when any audio input device is currently capturing.
 ///
 /// This is the one signal that works for every call app: Zoom and Teams are native,
@@ -272,7 +328,8 @@ final class OverlayWindow: NSWindow {
 
 // MARK: - App
 
-final class Controller: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavigationDelegate {
+final class Controller: NSObject, NSApplicationDelegate, NSMenuDelegate, WKScriptMessageHandler, WKNavigationDelegate {
+    func menuNeedsUpdate(_ menu: NSMenu) { rebuildMenu() }
 
     let cfg = Config.load()
     let lib = loadLibrary()
@@ -286,9 +343,15 @@ final class Controller: NSObject, NSApplicationDelegate, WKScriptMessageHandler,
     /// and the rest are ignored — otherwise one stretch is logged once per monitor.
     var handled = false
     let force = CommandLine.arguments.contains("--force") || CommandLine.arguments.contains("--now")
+    /// Resident mode: menu bar item, own hourly schedule, never quits by itself.
+    let agentMode = !(CommandLine.arguments.contains("--force") || CommandLine.arguments.contains("--now")
+                      || CommandLine.arguments.contains("--check") || CommandLine.arguments.contains("--devices"))
     /// Minutes already spent waiting for a call to end.
     var waited = 0
     var retryTimer: Timer?
+    var hourTimer: Timer?
+    var statusItem: NSStatusItem?
+    var showing: Bool { !windows.isEmpty }
 
     func applicationDidFinishLaunching(_ note: Notification) {
         // `rozimnys check` — say what would happen without touching the screen.
@@ -320,35 +383,161 @@ final class Controller: NSObject, NSApplicationDelegate, WKScriptMessageHandler,
             NSApp.terminate(nil); return
         }
 
-        // A retry loop can still be waiting when the next hour fires; don't stack up.
-        let id = Bundle.main.bundleIdentifier ?? "com.alina.potyagus"
-        let mine = ProcessInfo.processInfo.processIdentifier
-        if NSRunningApplication.runningApplications(withBundleIdentifier: id)
-            .contains(where: { $0.processIdentifier != mine }) {
-            fputs("Розімнись: вже запущений — виходжу\n", stderr)
+        if agentMode { startAgent(); return }
+        attempt(force: force)
+    }
+
+    // MARK: resident agent
+
+    func startAgent() {
+        // Straight off the disk image? Ask for a proper home first — launchd can't run from /Volumes.
+        if Bundle.main.bundlePath.hasPrefix("/Volumes/") {
+            NSApp.activate(ignoringOtherApps: true)
+            let a = NSAlert()
+            a.messageText = "Перетягни Потягуся в «Програми»"
+            a.informativeText = "Скопіюй Potyagus.app у папку Applications і відкрий звідти — тоді він оселиться в меню-барі й приходитиме щогодини."
+            a.addButton(withTitle: "Добре")
+            a.runModal()
             NSApp.terminate(nil); return
         }
+        // Only one resident goose.
+        let id = Bundle.main.bundleIdentifier ?? agentLabel
+        let mine = ProcessInfo.processInfo.processIdentifier
+        if NSRunningApplication.runningApplications(withBundleIdentifier: id)
+            .contains(where: { $0.processIdentifier != mine && !$0.isTerminated }) {
+            fputs("Потягусь: вже працює — виходжу\n", stderr)
+            NSApp.terminate(nil); return
+        }
+        installLaunchAgent()
+        setupStatusItem()
+        scheduleNextHour()
+        fputs("Потягусь: у меню-барі, наступний вихід о \(nextHourString())\n", stderr)
+    }
 
-        attempt()
+    func nextTopOfHour() -> Date {
+        let cal = Calendar.current
+        let next = cal.nextDate(after: Date(), matching: DateComponents(minute: 0, second: 0), matchingPolicy: .nextTime)!
+        return next
+    }
+    func nextHourString() -> String {
+        let f = DateFormatter(); f.dateFormat = "HH:mm"; return f.string(from: nextTopOfHour())
+    }
+
+    func scheduleNextHour() {
+        hourTimer?.invalidate()
+        let fireAt = nextTopOfHour().addingTimeInterval(1)
+        hourTimer = Timer(fire: fireAt, interval: 0, repeats: false) { [weak self] _ in
+            guard let self else { return }
+            self.scheduleNextHour()
+            // Woke from sleep long after the hour? Let this one go rather than nudge at 14:47.
+            let late = Date().timeIntervalSince(fireAt)
+            if late > 15 * 60 { fputs("Потягусь: проспав годину (\(Int(late/60)) хв) — пропускаю\n", stderr); return }
+            if self.showing { return }
+            self.waited = 0
+            self.attempt(force: false)
+        }
+        RunLoop.main.add(hourTimer!, forMode: .common)
+    }
+
+    // MARK: menu bar
+
+    func setupStatusItem() {
+        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        if let img = NSImage(systemSymbolName: "bird.fill", accessibilityDescription: "Потягусь") {
+            img.isTemplate = true
+            item.button?.image = img
+        } else {
+            item.button?.title = "🪿"
+        }
+        item.button?.toolTip = "Потягусь"
+        item.isVisible = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            fputs("Потягусь: статус-айтем frame=\(item.button?.window?.frame ?? .zero) visible=\(item.isVisible)\n", stderr)
+        }
+        let menu = NSMenu()
+        menu.delegate = self
+        item.menu = menu
+        statusItem = item
+        rebuildMenu()
+    }
+
+    func rebuildMenu() {
+        guard let menu = statusItem?.menu else { return }
+        menu.removeAllItems()
+        let cfg = Config.load()
+        let f = DateFormatter(); f.dateFormat = "HH:mm"
+
+        let head = NSMenuItem(title: "Сьогодні розім'ялась: \(doneToday()) / \(cfg.goal)", action: nil, keyEquivalent: "")
+        head.isEnabled = false; menu.addItem(head)
+        let when: String
+        if let until = pausedUntil() { when = "На паузі до \(f.string(from: until))" }
+        else { when = "Наступний вихід о \(nextHourString())" }
+        let sub = NSMenuItem(title: when, action: nil, keyEquivalent: ""); sub.isEnabled = false; menu.addItem(sub)
+        menu.addItem(.separator())
+
+        menu.addItem(withTitle: "Потягнутись зараз", action: #selector(menuNow), keyEquivalent: "n").target = self
+        menu.addItem(.separator())
+
+        if pausedUntil() != nil {
+            menu.addItem(withTitle: "Зняти паузу", action: #selector(menuResume), keyEquivalent: "").target = self
+        } else {
+            let pause = NSMenuItem(title: "Пауза", action: nil, keyEquivalent: "")
+            let sm = NSMenu()
+            for (title, mins) in [("30 хвилин", 30), ("1 година", 60), ("2 години", 120), ("До кінця дня", -1)] {
+                let it = NSMenuItem(title: title, action: #selector(menuPause(_:)), keyEquivalent: "")
+                it.target = self; it.tag = mins; sm.addItem(it)
+            }
+            pause.submenu = sm; menu.addItem(pause)
+        }
+        menu.addItem(.separator())
+        menu.addItem(withTitle: "Вимкнути автозапуск і вийти", action: #selector(menuUninstall), keyEquivalent: "").target = self
+        menu.addItem(withTitle: "Вийти до наступного входу", action: #selector(menuQuit), keyEquivalent: "q").target = self
+    }
+
+    @objc func menuNow() { if !showing { waited = 0; attempt(force: true) } }
+    @objc func menuResume() { setPaused(until: nil); rebuildMenu() }
+    @objc func menuPause(_ sender: NSMenuItem) {
+        let until: Date
+        if sender.tag < 0 {
+            until = Calendar.current.startOfDay(for: Date()).addingTimeInterval(24 * 3600)
+        } else {
+            until = Date().addingTimeInterval(Double(sender.tag) * 60)
+        }
+        setPaused(until: until); rebuildMenu()
+    }
+    @objc func menuQuit() {
+        // launchd would restart us (KeepAlive) — take the job down for this login session.
+        _ = launchctl(["bootout", "gui/\(getuid())/\(agentLabel)"])
+        NSApp.terminate(nil)
+    }
+    @objc func menuUninstall() {
+        NSApp.activate(ignoringOtherApps: true)
+        let a = NSAlert()
+        a.messageText = "Вимкнути Потягуся?"
+        a.informativeText = "Він більше не запускатиметься сам. Щоб повернути — просто відкрий застосунок ще раз."
+        a.addButton(withTitle: "Вимкнути"); a.addButton(withTitle: "Скасувати")
+        guard a.runModal() == .alertFirstButtonReturn else { return }
+        removeLaunchAgent()
+        NSApp.terminate(nil)
     }
 
     /// Show the overlay, or wait out a reason that will pass by itself.
-    func attempt() {
-        guard let skip = skipReason(cfg, force: force) else { present(); return }
+    func attempt(force: Bool) {
+        guard let skip = skipReason(Config.load(), force: force) else { present(); return }
 
         if skip.retriable, cfg.callRetryMinutes > 0, waited + cfg.callRetryMinutes <= cfg.callRetryWindowMinutes {
             waited += cfg.callRetryMinutes
-            fputs("Розімнись: \(skip.reason) — перевірю ще раз через \(cfg.callRetryMinutes) хв\n", stderr)
+            fputs("Потягусь: \(skip.reason) — перевірю ще раз через \(cfg.callRetryMinutes) хв\n", stderr)
             retryTimer?.invalidate()
             retryTimer = Timer.scheduledTimer(withTimeInterval: Double(cfg.callRetryMinutes) * 60,
-                                              repeats: false) { [weak self] _ in self?.attempt() }
+                                              repeats: false) { [weak self] _ in self?.attempt(force: false) }
             return
         }
 
         let note = waited > 0 ? "\(skip.reason); чекав \(waited) хв" : skip.reason
-        fputs("Розімнись: пропускаю — \(note)\n", stderr)
+        fputs("Потягусь: пропускаю — \(note)\n", stderr)
         appendHistory(["ts": Date().timeIntervalSince1970, "reason": "auto-skip", "note": note])
-        NSApp.terminate(nil)
+        if !agentMode { NSApp.terminate(nil) }
     }
 
     // Pick an exercise that hasn't shown up in the last few nudges.
@@ -371,7 +560,7 @@ final class Controller: NSObject, NSApplicationDelegate, WKScriptMessageHandler,
         if #available(macOS 10.15, *) { conf.defaultWebpagePreferences.allowsContentJavaScript = true }
 
         let screens = NSScreen.screens
-        guard !screens.isEmpty else { NSApp.terminate(nil); return }
+        guard !screens.isEmpty else { if !agentMode { NSApp.terminate(nil) }; return }
         let active = activeScreen()
         let url = overlayURL()
 
@@ -390,7 +579,7 @@ final class Controller: NSObject, NSApplicationDelegate, WKScriptMessageHandler,
 
             wv.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent())
 
-            fputs("Розімнись: екран \(NSStringFromRect(screen.frame)) → вікно \(NSStringFromRect(win.frame))"
+            fputs("Потягусь: екран \(NSStringFromRect(screen.frame)) → вікно \(NSStringFromRect(win.frame))"
                   + (screen == active ? " [активний]" : "") + "\n", stderr)
         }
         if primaryWebView == nil { primaryWebView = webViews.first }
@@ -492,10 +681,7 @@ final class Controller: NSObject, NSApplicationDelegate, WKScriptMessageHandler,
             ctx.duration = 0.4
             for w in self.windows { w.animator().alphaValue = 0 }
         }, completionHandler: {
-            for w in self.windows { w.orderOut(nil) }
-            self.windows.removeAll()
-            self.webViews.removeAll()
-            self.primaryWebView = nil
+            self.tearDownWindows()
             Timer.scheduledTimer(withTimeInterval: 300, repeats: false) { _ in self.present() }
         })
     }
@@ -504,7 +690,15 @@ final class Controller: NSObject, NSApplicationDelegate, WKScriptMessageHandler,
         NSAnimationContext.runAnimationGroup({ ctx in
             ctx.duration = 0.45
             for w in self.windows { w.animator().alphaValue = 0 }
-        }, completionHandler: { NSApp.terminate(nil) })
+        }, completionHandler: {
+            self.tearDownWindows()
+            if self.agentMode { self.rebuildMenu() } else { NSApp.terminate(nil) }
+        })
+    }
+
+    func tearDownWindows() {
+        for w in windows { w.orderOut(nil); w.contentView = nil }
+        windows.removeAll(); webViews.removeAll(); primaryWebView = nil
     }
 }
 

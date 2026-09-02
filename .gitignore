@@ -8,3 +8,4 @@ logs/
 # великі проби відео — тільки контактні аркуші в git
 v2/video-tests/*.mp4
 dist/
+# логи агента тепер у ~/Library/Logs/Potyagus
