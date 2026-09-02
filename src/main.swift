@@ -443,8 +443,10 @@ final class Controller: NSObject, NSApplicationDelegate, NSMenuDelegate, WKScrip
 
     func setupStatusItem() {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        if let img = NSImage(systemSymbolName: "bird.fill", accessibilityDescription: "Потягусь") {
+        // Свій гусь як template-іконка (силует із art/icon/menubar, 36/72 px).
+        if let img = Bundle.main.image(forResource: "goose-menubar") {
             img.isTemplate = true
+            img.size = NSSize(width: 18, height: 18)
             item.button?.image = img
         } else {
             item.button?.title = "🪿"

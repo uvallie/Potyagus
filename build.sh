@@ -19,6 +19,7 @@ swiftc -O \
 cp "$ROOT/web/overlay.html"     "$RES/overlay.html"
 cp "$ROOT/data/exercises.json"  "$RES/exercises.json"
 cp "$ROOT/art/icon/Potyagus.icns" "$RES/Potyagus.icns"
+cp "$ROOT/art/icon/menubar/goose-menubar.png" "$ROOT/art/icon/menubar/goose-menubar@2x.png" "$RES/"
 [ -d "$ROOT/web/clips" ] && cp -R "$ROOT/web/clips" "$RES/clips"
 [ -d "$ROOT/web/sfx" ]   && cp -R "$ROOT/web/sfx"   "$RES/sfx"
 
