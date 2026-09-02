@@ -68,6 +68,9 @@
   svg.goose{display:none;width:100%;height:auto;overflow:visible;
     animation:dropin .7s cubic-bezier(.18,1.4,.5,1) both}
   svg.goose.active{display:block}
+  /* сплеш для промо: лише назва, репліка й гусь */
+  body.splash .card,body.splash .actions,body.splash .hint{display:none!important}
+  body.splash .taunt{font-size:clamp(28px,2.6vw,44px)}
   /* v2: з відео риг не показуємо взагалі — інакше він блимає на старті, поки кліп вантажиться */
   body.clips svg.goose{display:none!important}
   @keyframes dropin{0%{transform:translateY(-40px);opacity:0}100%{transform:none;opacity:1}}
@@ -708,6 +711,13 @@ const VIEW = {
 };
 
 let state = "idle", total = 30, left = 30, tick = null, finished = false, closing = false, startedAt = null;
+/* ?shot=idle|active|done — режим для промо-скрінів: без звуку, без відліку, без автозакриття */
+const SHOT = new URLSearchParams(location.search).get("shot");
+/* ?img=<png із зеленим фоном> — стоп-кадр замість відео (headless-браузери відео не грають) */
+let shotImg = null;
+if (SHOT && new URLSearchParams(location.search).get("img")) {
+  shotImg = new Image(); shotImg.src = new URLSearchParams(location.search).get("img");
+}
 
 function setState(s){ state = s; document.body.dataset.state = s; }
 
@@ -724,9 +734,11 @@ const SOFT_IN = 22, SOFT_OUT = 58;
 let rafId = 0;
 function drawClip(){
   rafId = requestAnimationFrame(drawClip);
-  if (clip.readyState < 2) return;
-  if (cv.width !== clip.videoWidth) { cv.width = clip.videoWidth; cv.height = clip.videoHeight; }
-  cx.drawImage(clip, 0, 0, cv.width, cv.height);
+  const src = shotImg && shotImg.complete && shotImg.naturalWidth ? shotImg : clip;
+  if (src === clip && clip.readyState < 2) return;
+  const sw = src === clip ? clip.videoWidth : src.naturalWidth, sh = src === clip ? clip.videoHeight : src.naturalHeight;
+  if (cv.width !== sw) { cv.width = sw; cv.height = sh; }
+  cx.drawImage(src, 0, 0, cv.width, cv.height);
   const img = cx.getImageData(0, 0, cv.width, cv.height), d = img.data;
   // ключ — середній колір чотирьох кутків цього ж кадру (у кожного кліпу зелений трохи свій)
   const W = cv.width, H = cv.height, c = [[6,6],[W-7,6],[6,H-7],[W-7,H-7]].map(([x,y]) => (y*W+x)*4);
@@ -759,6 +771,7 @@ function useClip(name){
   };
   clip.src = "clips/" + name + ".mp4";
   clip.load();
+  if (shotImg) { slot.classList.add("has-clip"); if (!rafId) drawClip(); }
 }
 
 /* which drawing is on stage, and which pose it holds */
@@ -853,7 +866,7 @@ function complete(){
   document.querySelector(".goose.active").classList.add("celebrate");
   honk("done");
   confetti();
-  setTimeout(() => { if (!closing) finish("done"); }, 3200);
+  if (!SHOT) setTimeout(() => { if (!closing) finish("done"); }, 3200);
 }
 
 function finish(reason){
@@ -958,11 +971,22 @@ $("btnSnooze2").onclick = () => finish("snooze");
 $("btnSkip").onclick    = e => { e.stopPropagation(); finish("skip"); };
 $("btnSkip2").onclick   = () => finish("skip");
 
-setTimeout(() => honk("hello"), 1000);   // the goose announces itself
+if (SHOT) DATA.muted = true;
+if (SHOT === "splash") {
+  document.body.classList.add("splash");
+  const n = new URLSearchParams(location.search).get("taunt");
+  if (n) setTimeout(() => { $("taunt").textContent = n; }, 300);
+}
+else setTimeout(() => honk("hello"), 1000);   // the goose announces itself
 clock(); setInterval(clock, 15000);
 
 window.rozimnysInit = function(payload){ DATA = Object.assign(DATA, payload || {}); render(); };
 setTimeout(() => { if (document.body.dataset.state === "idle" && !$("steps").children.length) render(); }, 260);
+if (SHOT === "active" || SHOT === "done") setTimeout(() => {
+  begin(); clearInterval(tick);
+  left = 21; $("num").textContent = left; $("prog").style.strokeDashoffset = 2*Math.PI*44 * (left / total);
+  if (SHOT === "done") setTimeout(complete, 400);
+}, 600);
 </script>
 </body>
 </html>
