@@ -7,3 +7,4 @@ logs/
 *.svg.png
 # великі проби відео — тільки контактні аркуші в git
 v2/video-tests/*.mp4
+dist/
