@@ -27,6 +27,9 @@ let pauseURL   = support.appendingPathComponent("paused-until")
 struct Config {
     var startHour  = 9
     var endHour    = 21
+    /// Minute past the hour to show up. Not :00 — that's when meetings start; by :05 a call
+    /// has already grabbed the microphone and the call check can see it.
+    var minute     = 5
     var weekdaysOnly = false
     var goal       = 8
     var blockApps: [String] = ["us.zoom.xos", "com.microsoft.teams2", "com.apple.FaceTime",
@@ -48,6 +51,7 @@ struct Config {
               let j = try? JSONSerialization.jsonObject(with: d) as? [String: Any] else { return c }
         if let v = j["startHour"]    as? Int      { c.startHour = v }
         if let v = j["endHour"]      as? Int      { c.endHour = v }
+        if let v = j["minute"]       as? Int, (0...59).contains(v) { c.minute = v }
         if let v = j["weekdaysOnly"] as? Bool     { c.weekdaysOnly = v }
         if let v = j["goal"]         as? Int      { c.goal = v }
         if let v = j["blockApps"]    as? [String] { c.blockApps = v }
@@ -416,7 +420,7 @@ final class Controller: NSObject, NSApplicationDelegate, NSMenuDelegate, WKScrip
 
     func nextTopOfHour() -> Date {
         let cal = Calendar.current
-        let next = cal.nextDate(after: Date(), matching: DateComponents(minute: 0, second: 0), matchingPolicy: .nextTime)!
+        let next = cal.nextDate(after: Date(), matching: DateComponents(minute: Config.load().minute, second: 0), matchingPolicy: .nextTime)!
         return next
     }
     func nextHourString() -> String {
