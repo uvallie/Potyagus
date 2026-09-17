@@ -142,6 +142,16 @@
     padding:10px 6px;text-decoration:underline;text-underline-offset:4px;text-decoration-color:rgba(30,58,36,.45)}
   .btn-skip:hover{opacity:1}
 
+  /* ---------- «не турбувати»: вибір тривалості просто над кнопкою ---------- */
+  .dnd{position:relative}
+  .dnd-menu{position:absolute;left:0;bottom:calc(100% + 10px);z-index:4;display:none;flex-direction:column;gap:4px;
+    min-width:190px;padding:8px;border-radius:18px;background:#fff;border:1px solid rgba(30,58,36,.16);
+    box-shadow:0 18px 44px -18px rgba(30,58,36,.55)}
+  .dnd.open .dnd-menu{display:flex}
+  .dnd-menu button{text-align:left;padding:10px 14px;border-radius:12px;background:none;
+    font-size:clamp(14px,1.05vw,17px);font-weight:600;color:var(--ink)}
+  .dnd-menu button:hover{background:rgba(125,178,98,.28)}
+
   .hint{font-size:clamp(13px,1vw,16px);color:var(--ink);opacity:.82;margin-top:-4px}
   .hint kbd{font:inherit;font-size:.85em;padding:2px 8px;border-radius:6px;
     background:rgba(255,255,255,.7);border:1px solid rgba(30,58,36,.15)}
@@ -650,6 +660,15 @@
       <div class="actions">
         <button class="btn-primary pulse" id="btnStart">Встаю — поїхали</button>
         <button class="btn-ghost" id="btnSnooze">Ще 5 хв</button>
+        <div class="dnd" id="dnd1">
+          <button class="btn-ghost" data-dnd-toggle>Не турбувати</button>
+          <div class="dnd-menu">
+            <button data-dnd="30">30 хвилин</button>
+            <button data-dnd="60">1 година</button>
+            <button data-dnd="120">2 години</button>
+            <button data-dnd="-1">До кінця дня</button>
+          </div>
+        </div>
         <button class="btn-skip" id="btnSkip">пропустити цю годину</button>
       </div>
       <div class="hint">Клацни будь-де або натисни <kbd>пробіл</kbd>, коли вже стоїш.</div>
@@ -671,6 +690,15 @@
       <div class="actions">
         <button class="btn-primary good" id="btnDone" hidden>Готово ✓</button>
         <button class="btn-ghost" id="btnSnooze2">Ще 5 хв</button>
+        <div class="dnd" id="dnd2">
+          <button class="btn-ghost" data-dnd-toggle>Не турбувати</button>
+          <div class="dnd-menu">
+            <button data-dnd="30">30 хвилин</button>
+            <button data-dnd="60">1 година</button>
+            <button data-dnd="120">2 години</button>
+            <button data-dnd="-1">До кінця дня</button>
+          </div>
+        </div>
         <button class="btn-skip" id="btnSkip2">пропустити цю годину</button>
       </div>
     </div>
@@ -698,7 +726,8 @@ let DATA = {
   doneLine: "Оце інша справа. Твій хребет відкликав заяву.",
   name: "Дотягнись до стелі", pose: "reach", seconds: 30,
   steps: ["Встань. Так, зараз.","Зчепи пальці в замок і виштовхни долоні вгору.","Тягнись маківкою за руками. Дихай."],
-  todayCount: 0, goal: 8, muted: false
+  todayCount: 0, goal: 8, muted: false,
+  volume: 1, interval: 60
 };
 
 const $ = id => document.getElementById(id);
@@ -807,6 +836,9 @@ function render(){
   }
   $("footText").textContent = "Сьогодні розім'ялась: " + DATA.todayCount + " / " + goal;
 
+  const skipText = DATA.interval === 60 ? "пропустити цю годину" : "пропустити цього разу";
+  $("btnSkip").textContent = $("btnSkip2").textContent = skipText;
+
   total = left = DATA.seconds;
   $("num").textContent = left;
   const circ = 2*Math.PI*44, prog = $("prog");
@@ -869,17 +901,24 @@ function complete(){
   if (!SHOT) setTimeout(() => { if (!closing) finish("done"); }, 3200);
 }
 
-function finish(reason){
+function dndUntil(mins){
+  if (mins < 0) return "до кінця дня";
+  const d = new Date(Date.now() + mins*60000);
+  return "до " + String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0");
+}
+function finish(reason, extra){
+  extra = extra || {};
   if (closing) return;
   closing = true;
   clearInterval(tick);
   $("byeText").textContent =
       reason === "done"   ? DATA.doneLine
     : reason === "snooze" ? "Добре. Але я повернусь за 5 хвилин."
+    : reason === "dnd"    ? "Гаразд, не турбую " + dndUntil(extra.minutes) + "."
     :                       "Ну гаразд. Але я все бачив.";
   $("bye").classList.add("show");
   const elapsed = startedAt ? Math.round((Date.now() - startedAt)/1000) : 0;
-  setTimeout(() => send(reason, {elapsed, started: !!startedAt}), 1150);
+  setTimeout(() => send(reason, Object.assign({elapsed, started: !!startedAt}, extra)), 1150);
 }
 
 /* ---------- sound ---------- */
@@ -896,8 +935,8 @@ function honkOnce(t0, f0, len, drop){
   bp.type = "bandpass"; bp.Q.value = 3.2;
   bp.frequency.setValueAtTime(f0*3.4, t0);      bp.frequency.exponentialRampToValueAtTime(f0*2.2, t0+len);
   g.gain.setValueAtTime(0, t0);
-  g.gain.linearRampToValueAtTime(0.22, t0+0.018);
-  g.gain.setValueAtTime(0.22, t0+len*0.55);
+  g.gain.linearRampToValueAtTime(0.22*vol(), t0+0.018);
+  g.gain.setValueAtTime(0.22*vol(), t0+len*0.55);
   g.gain.exponentialRampToValueAtTime(0.0001, t0+len);
   const o2g = actx.createGain(); o2g.gain.value = 0.35;
   o1.connect(bp); o2.connect(o2g); o2g.connect(bp); bp.connect(g); g.connect(actx.destination);
@@ -906,11 +945,13 @@ function honkOnce(t0, f0, len, drop){
 /* v0.2: справжній гусак. Семпли вирізані з аудіодоріжки, яку MiniMax згенерував до кліпу
    «дотягнись» (v2/audio/reach.m4a). Синтез нижче лишається запасним, якщо файл не програється. */
 const SFX = { hello: "sfx/honk.m4a", done: "sfx/honk-burst.m4a", grunt: "sfx/honk.m4a" };
+/* гучність із налаштувань (config.json → volume, 0–100): 0 — гусь мовчить, нагадування лишається */
+function vol(){ const v = Number(DATA.volume); return isFinite(v) ? Math.min(Math.max(v, 0), 1) : 1; }
 function honk(kind){
-  if (DATA.muted) return;
+  if (DATA.muted || vol() === 0) return;
   const src = SFX[kind] || SFX.grunt;
   try{
-    const a = new Audio(src); a.volume = 0.9;
+    const a = new Audio(src); a.volume = 0.9 * vol();
     const p = a.play();
     if (p && p.catch) p.catch(() => honkSynth(kind)); else return;
     return;
@@ -934,13 +975,13 @@ function honkSynth(kind){
 }
 
 function chime(notes, gap){
-  if (DATA.muted) return;
+  if (DATA.muted || vol() === 0) return;
   try{
     actx = actx || new (window.AudioContext || window.webkitAudioContext)();
     notes.forEach((f, i) => {
       const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime + i*gap;
       o.type = "sine"; o.frequency.value = f;
-      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.16, t+0.02);
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.16*vol(), t+0.02);
       g.gain.exponentialRampToValueAtTime(0.0001, t+0.55);
       o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t+0.6);
     });
@@ -963,13 +1004,22 @@ function clock(){ const d = new Date();
 
 /* ---------- wiring ---------- */
 $("btnStart").onclick   = e => { e.stopPropagation(); start(); };
-$("stage").addEventListener("click", e => { if (state === "idle" && !e.target.closest("button")) start(); });
+$("stage").addEventListener("click", e => { if (state === "idle" && !e.target.closest("button,.dnd")) start(); });
 window.addEventListener("keydown", e => { if ((e.code === "Space" || e.code === "Enter") && state === "idle"){ e.preventDefault(); start(); } });
 $("btnDone").onclick    = () => finish("done");
 $("btnSnooze").onclick  = e => { e.stopPropagation(); finish("snooze"); };
 $("btnSnooze2").onclick = () => finish("snooze");
 $("btnSkip").onclick    = e => { e.stopPropagation(); finish("skip"); };
 $("btnSkip2").onclick   = () => finish("skip");
+document.querySelectorAll(".dnd").forEach(box => {
+  box.querySelector("[data-dnd-toggle]").onclick = e => { e.stopPropagation(); box.classList.toggle("open"); };
+  box.querySelectorAll("[data-dnd]").forEach(b => b.onclick = e => {
+    e.stopPropagation(); finish("dnd", {minutes: Number(b.dataset.dnd)});
+  });
+});
+document.addEventListener("click", e => {
+  if (!e.target.closest(".dnd")) document.querySelectorAll(".dnd.open").forEach(b => b.classList.remove("open"));
+}, true);
 
 if (SHOT) DATA.muted = true;
 if (SHOT === "splash") {
@@ -977,10 +1027,15 @@ if (SHOT === "splash") {
   const n = new URLSearchParams(location.search).get("taunt");
   if (n) setTimeout(() => { $("taunt").textContent = n; }, 300);
 }
-else setTimeout(() => honk("hello"), 1000);   // the goose announces itself
+else if (!native) setTimeout(() => honk("hello"), 1000);   // the goose announces itself
 clock(); setInterval(clock, 15000);
 
-window.rozimnysInit = function(payload){ DATA = Object.assign(DATA, payload || {}); render(); };
+let greeted = false;
+window.rozimnysInit = function(payload){
+  DATA = Object.assign(DATA, payload || {}); render();
+  // in the app the honk waits for the payload — that's where the volume setting comes from
+  if (!greeted && !SHOT) { greeted = true; setTimeout(() => honk("hello"), 900); }
+};
 setTimeout(() => { if (document.body.dataset.state === "idle" && !$("steps").children.length) render(); }, 260);
 if (SHOT === "active" || SHOT === "done") setTimeout(() => {
   begin(); clearInterval(tick);

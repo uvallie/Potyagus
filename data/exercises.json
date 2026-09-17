@@ -1,7 +1,7 @@
 {
   "exercises": [
     {
-      "id": "reach",
+      "id": "reach", "group": "Спина й груди",
       "pose": "reach",
       "seconds": 30,
       "name": "Дотягнись до стелі",
@@ -12,7 +12,7 @@
       ]
     },
     {
-      "id": "neck",
+      "id": "neck", "group": "Шия",
       "pose": "neck",
       "seconds": 40,
       "name": "Шия: вухо до плеча",
@@ -23,7 +23,7 @@
       ]
     },
     {
-      "id": "squat",
+      "id": "squat", "group": "Ноги й кровообіг",
       "pose": "squat",
       "seconds": 45,
       "name": "15 присідань",
@@ -34,7 +34,7 @@
       ]
     },
     {
-      "id": "sidebend",
+      "id": "sidebend", "group": "Спина й груди",
       "pose": "sidebend",
       "seconds": 35,
       "name": "Бічний нахил",
@@ -45,7 +45,7 @@
       ]
     },
     {
-      "id": "walk",
+      "id": "walk", "group": "Ноги й кровообіг",
       "pose": "walk",
       "seconds": 60,
       "name": "Просто пройдись",
@@ -56,7 +56,7 @@
       ]
     },
     {
-      "id": "jacks",
+      "id": "jacks", "group": "Ноги й кровообіг",
       "pose": "jacks",
       "seconds": 40,
       "name": "Стрибки «зірочка»",
@@ -67,7 +67,7 @@
       ]
     },
     {
-      "id": "knees",
+      "id": "knees", "group": "Ноги й кровообіг",
       "pose": "knees",
       "seconds": 45,
       "name": "Марш з високими колінами",
@@ -78,7 +78,7 @@
       ]
     },
     {
-      "id": "neckroll",
+      "id": "neckroll", "group": "Шия",
       "pose": "neckroll",
       "seconds": 40,
       "name": "Півкола головою",
@@ -89,7 +89,7 @@
       ]
     },
     {
-      "id": "chintuck",
+      "id": "chintuck", "group": "Шия",
       "pose": "chintuck",
       "seconds": 30,
       "name": "Підборіддя назад",
@@ -100,7 +100,7 @@
       ]
     },
     {
-      "id": "wingcircles",
+      "id": "wingcircles", "group": "Плечі й дихання",
       "pose": "wingcircles",
       "seconds": 40,
       "name": "Великі кола руками",
@@ -111,7 +111,7 @@
       ]
     },
     {
-      "id": "backbend",
+      "id": "backbend", "group": "Спина й груди",
       "pose": "backbend",
       "seconds": 30,
       "name": "Прогин назад",
@@ -122,7 +122,7 @@
       ]
     },
     {
-      "id": "breathe",
+      "id": "breathe", "group": "Плечі й дихання",
       "pose": "breathe",
       "seconds": 40,
       "name": "Три глибокі вдихи",
@@ -133,7 +133,7 @@
       ]
     },
     {
-      "id": "toes",
+      "id": "toes", "group": "Спина й груди",
       "pose": "toes",
       "seconds": 40,
       "name": "Нахил вперед до пальців ніг",
@@ -144,7 +144,7 @@
       ]
     },
     {
-      "id": "shake",
+      "id": "shake", "group": "Плечі й дихання",
       "pose": "shake",
       "seconds": 30,
       "name": "Струсити все з себе",
@@ -155,7 +155,7 @@
       ]
     },
     {
-      "id": "eyes",
+      "id": "eyes", "group": "Очі",
       "pose": "eyes",
       "seconds": 25,
       "name": "Правило 20-20-20",
@@ -166,7 +166,7 @@
       ]
     },
     {
-      "id": "hip",
+      "id": "hip", "group": "Ноги й кровообіг",
       "pose": "hip",
       "seconds": 40,
       "name": "Розтяжка стегон",
@@ -177,7 +177,7 @@
       ]
     },
     {
-      "id": "chest",
+      "id": "chest", "group": "Спина й груди",
       "pose": "chest",
       "seconds": 35,
       "name": "Розкрий груди",

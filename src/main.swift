@@ -44,6 +44,15 @@ struct Config {
     var requireOutputForCall = true
     /// Seconds to wait before re-sampling; dictation bursts end, calls don't.
     var confirmCallSeconds = 8
+    /// Minutes between nudges. 60 = every hour at `minute`; other values count from midnight,
+    /// shifted by `minute` (30 → :05 and :35).
+    var intervalMinutes = 60
+    /// Goose voice and chimes, 0–100. 0 is silent; the nudge itself still shows up.
+    var volume = 100
+    /// Hidden icon comes back when the app is opened again from Applications.
+    var showMenuBarIcon = true
+    /// Exercise ids unticked in the menu-bar catalogue — the goose never picks these.
+    var disabledExercises: [String] = []
 
     static func load() -> Config {
         var c = Config()
@@ -60,14 +69,43 @@ struct Config {
         if let v = j["callRetryWindowMinutes"] as? Int  { c.callRetryWindowMinutes = v }
         if let v = j["requireOutputForCall"]   as? Bool { c.requireOutputForCall = v }
         if let v = j["confirmCallSeconds"]     as? Int  { c.confirmCallSeconds = v }
+        if let v = j["intervalMinutes"] as? Int, (10...480).contains(v) { c.intervalMinutes = v }
+        if let v = j["volume"]          as? Int  { c.volume = min(max(v, 0), 100) }
+        if let v = j["showMenuBarIcon"] as? Bool { c.showMenuBarIcon = v }
+        if let v = j["disabledExercises"] as? [String] { c.disabledExercises = v }
         return c
     }
 }
+
+/// Change one key in config.json, leaving everything else the user wrote there alone.
+func saveConfigValue(_ key: String, _ value: Any) {
+    var j = ((try? Data(contentsOf: configURL)).flatMap { try? JSONSerialization.jsonObject(with: $0) } as? [String: Any]) ?? [:]
+    j[key] = value
+    guard let d = try? JSONSerialization.data(withJSONObject: j, options: [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes])
+    else { return }
+    try? d.write(to: configURL, options: .atomic)
+}
+
+/// A second launch (double-click in Applications) pings the resident goose with this.
+let reopenNote = Notification.Name("com.alina.potyagus.reopen")
 
 // MARK: - Exercise data
 
 struct Exercise: Decodable {
     let id: String, pose: String, seconds: Int, name: String, steps: [String]
+    /// Catalogue section («Шия», «Очі»…). Optional so custom exercises.json files keep working.
+    let group: String?
+}
+
+/// Exercises in catalogue order: sections as they first appear in the file.
+func catalogGroups(_ lib: Library) -> [(title: String, items: [Exercise])] {
+    var order: [String] = [], map: [String: [Exercise]] = [:]
+    for e in lib.exercises {
+        let g = e.group ?? "Інше"
+        if map[g] == nil { order.append(g) }
+        map[g, default: []].append(e)
+    }
+    return order.map { ($0, map[$0]!) }
 }
 struct Library: Decodable {
     let exercises: [Exercise], taunts: [String], done_lines: [String]
@@ -410,18 +448,27 @@ final class Controller: NSObject, NSApplicationDelegate, NSMenuDelegate, WKScrip
         if NSRunningApplication.runningApplications(withBundleIdentifier: id)
             .contains(where: { $0.processIdentifier != mine && !$0.isTerminated }) {
             fputs("Потягусь: вже працює — виходжу\n", stderr)
+            DistributedNotificationCenter.default().postNotificationName(reopenNote, object: nil, userInfo: nil, deliverImmediately: true)
             NSApp.terminate(nil); return
         }
         installLaunchAgent()
         setupStatusItem()
+        DistributedNotificationCenter.default().addObserver(self, selector: #selector(reopened),
+                                                            name: reopenNote, object: nil)
         scheduleNextHour()
         fputs("Потягусь: у меню-барі, наступний вихід о \(nextHourString())\n", stderr)
     }
 
+    /// Next slot of the schedule: every `intervalMinutes`, counted from midnight and shifted by `minute`.
     func nextTopOfHour() -> Date {
-        let cal = Calendar.current
-        let next = cal.nextDate(after: Date(), matching: DateComponents(minute: Config.load().minute, second: 0), matchingPolicy: .nextTime)!
-        return next
+        let c = Config.load(), cal = Calendar.current, now = Date()
+        let step = c.intervalMinutes, offset = c.minute % step
+        let day = cal.startOfDay(for: now)
+        let mins = now.timeIntervalSince(day) / 60
+        let k = max(0, Int(floor((mins - Double(offset)) / Double(step))) + 1)
+        let t = day.addingTimeInterval(Double(offset + k * step) * 60)
+        if cal.isDate(t, inSameDayAs: now) { return t }
+        return cal.startOfDay(for: day.addingTimeInterval(36 * 3600)).addingTimeInterval(Double(offset) * 60)
     }
     func nextHourString() -> String {
         let f = DateFormatter(); f.dateFormat = "HH:mm"; return f.string(from: nextTopOfHour())
@@ -435,7 +482,7 @@ final class Controller: NSObject, NSApplicationDelegate, NSMenuDelegate, WKScrip
             self.scheduleNextHour()
             // Woke from sleep long after the hour? Let this one go rather than nudge at 14:47.
             let late = Date().timeIntervalSince(fireAt)
-            if late > 15 * 60 { fputs("Потягусь: проспав годину (\(Int(late/60)) хв) — пропускаю\n", stderr); return }
+            if late > Double(min(15, Config.load().intervalMinutes / 2)) * 60 { fputs("Потягусь: проспав годину (\(Int(late/60)) хв) — пропускаю\n", stderr); return }
             if self.showing { return }
             self.waited = 0
             self.attempt(force: false)
@@ -456,7 +503,7 @@ final class Controller: NSObject, NSApplicationDelegate, NSMenuDelegate, WKScrip
             item.button?.title = "🪿"
         }
         item.button?.toolTip = "Потягусь"
-        item.isVisible = true
+        item.isVisible = Config.load().showMenuBarIcon
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
             fputs("Потягусь: статус-айтем frame=\(item.button?.window?.frame ?? .zero) visible=\(item.isVisible)\n", stderr)
         }
@@ -496,8 +543,40 @@ final class Controller: NSObject, NSApplicationDelegate, NSMenuDelegate, WKScrip
             pause.submenu = sm; menu.addItem(pause)
         }
         menu.addItem(.separator())
+
+        let catalog = NSMenuItem(title: "Каталог вправ", action: nil, keyEquivalent: "")
+        let cm = NSMenu()
+        for (title, items) in catalogGroups(lib) {
+            let h = NSMenuItem(title: title, action: nil, keyEquivalent: ""); h.isEnabled = false; cm.addItem(h)
+            for e in items {
+                let it = NSMenuItem(title: "\(e.name) · \(e.seconds) с", action: #selector(menuExercise(_:)), keyEquivalent: "")
+                it.target = self; it.representedObject = e.id; it.indentationLevel = 1
+                it.state = cfg.disabledExercises.contains(e.id) ? .off : .on
+                cm.addItem(it)
+            }
+        }
+        catalog.submenu = cm; menu.addItem(catalog)
+
+        let freq = NSMenuItem(title: "Частота", action: nil, keyEquivalent: "")
+        let fm = NSMenu()
+        for (title, mins) in [("Кожні 30 хвилин", 30), ("Щогодини", 60), ("Кожні 90 хвилин", 90)] {
+            let it = NSMenuItem(title: title, action: #selector(menuInterval(_:)), keyEquivalent: "")
+            it.target = self; it.tag = mins; it.state = cfg.intervalMinutes == mins ? .on : .off; fm.addItem(it)
+        }
+        freq.submenu = fm; menu.addItem(freq)
+
+        let sound = NSMenuItem(title: "Звук", action: nil, keyEquivalent: "")
+        let vm = NSMenu()
+        for (title, vol) in [("Гучно", 100), ("Середньо", 50), ("Тихо", 20), ("Вимкнено", 0)] {
+            let it = NSMenuItem(title: title, action: #selector(menuVolume(_:)), keyEquivalent: "")
+            it.target = self; it.tag = vol; it.state = cfg.volume == vol ? .on : .off; vm.addItem(it)
+        }
+        sound.submenu = vm; menu.addItem(sound)
+
+        menu.addItem(withTitle: "Приховати іконку з меню-бара…", action: #selector(menuHideIcon), keyEquivalent: "").target = self
+        menu.addItem(.separator())
         menu.addItem(withTitle: "Вимкнути автозапуск і вийти", action: #selector(menuUninstall), keyEquivalent: "").target = self
-        menu.addItem(withTitle: "Вийти до наступного входу", action: #selector(menuQuit), keyEquivalent: "q").target = self
+        menu.addItem(withTitle: "Вийти", action: #selector(menuQuit), keyEquivalent: "q").target = self
     }
 
     @objc func menuNow() { if !showing { waited = 0; attempt(force: true) } }
@@ -510,6 +589,45 @@ final class Controller: NSObject, NSApplicationDelegate, NSMenuDelegate, WKScrip
             until = Date().addingTimeInterval(Double(sender.tag) * 60)
         }
         setPaused(until: until); rebuildMenu()
+    }
+    /// Tick / untick an exercise in the catalogue. The last ticked one stays — the goose needs something to show.
+    @objc func menuExercise(_ sender: NSMenuItem) {
+        guard let id = sender.representedObject as? String else { return }
+        var off = Set(Config.load().disabledExercises)
+        if off.contains(id) { off.remove(id) }
+        else if lib.exercises.filter({ !off.contains($0.id) }).count > 1 { off.insert(id) }
+        else { NSSound.beep(); return }
+        saveConfigValue("disabledExercises", lib.exercises.map(\.id).filter(off.contains))
+        rebuildMenu()
+    }
+    @objc func menuInterval(_ sender: NSMenuItem) {
+        saveConfigValue("intervalMinutes", sender.tag); scheduleNextHour(); rebuildMenu()
+    }
+    @objc func menuVolume(_ sender: NSMenuItem) { saveConfigValue("volume", sender.tag); rebuildMenu() }
+    @objc func menuHideIcon() {
+        NSApp.activate(ignoringOtherApps: true)
+        let a = NSAlert()
+        a.messageText = "Приховати іконку Потягуся?"
+        a.informativeText = "Нагадування працюватимуть далі. Щоб повернути іконку й меню — відкрий Potyagus із «Програм» ще раз."
+        a.addButton(withTitle: "Приховати"); a.addButton(withTitle: "Скасувати")
+        guard a.runModal() == .alertFirstButtonReturn else { return }
+        saveConfigValue("showMenuBarIcon", false)
+        statusItem?.isVisible = false
+    }
+    /// The app was opened again while the goose is already resident: bring the icon back.
+    @objc func reopened() {
+        guard agentMode, statusItem?.isVisible == false else { return }
+        saveConfigValue("showMenuBarIcon", true)
+        statusItem?.isVisible = true
+        NSApp.activate(ignoringOtherApps: true)
+        let a = NSAlert()
+        a.messageText = "Потягусь знову в меню-барі"
+        a.informativeText = "Іконка гуся повернулась — усе керування там."
+        a.addButton(withTitle: "Добре")
+        a.runModal()
+    }
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        reopened(); return false
     }
     @objc func menuQuit() {
         // launchd would restart us (KeepAlive) — take the job down for this login session.
@@ -548,9 +666,13 @@ final class Controller: NSObject, NSApplicationDelegate, NSMenuDelegate, WKScrip
 
     // Pick an exercise that hasn't shown up in the last few nudges.
     func pickExercise() -> Exercise {
-        let recent = Set(lastExerciseIDs(4))
-        let fresh = lib.exercises.filter { !recent.contains($0.id) }
-        return (fresh.isEmpty ? lib.exercises : fresh).randomElement()!
+        let off = Set(Config.load().disabledExercises)
+        let enabled = lib.exercises.filter { !off.contains($0.id) }
+        let pool = enabled.isEmpty ? lib.exercises : enabled
+        // With only a few ticked, "not in the last four" shrinks so there is still a choice.
+        let recent = Set(lastExerciseIDs(min(4, pool.count - 1)))
+        let fresh = pool.filter { !recent.contains($0.id) }
+        return (fresh.isEmpty ? pool : fresh).randomElement()!
     }
 
     func present() {
@@ -600,7 +722,11 @@ final class Controller: NSObject, NSApplicationDelegate, NSMenuDelegate, WKScrip
             }
         }
 
-        // If it is simply ignored, step aside rather than sit there forever.
+        armWatchdog()
+    }
+
+    /// If it is simply ignored, step aside rather than sit there forever.
+    func armWatchdog() {
         watchdog?.invalidate()
         watchdog = Timer.scheduledTimer(withTimeInterval: Double(current.seconds) + 240, repeats: false) { [weak self] _ in
             guard let self, !self.handled else { return }
@@ -633,6 +759,7 @@ final class Controller: NSObject, NSApplicationDelegate, NSMenuDelegate, WKScrip
     }
 
     func webView(_ wv: WKWebView, didFinish nav: WKNavigation!) {
+        let cfg = Config.load()
         let payload: [String: Any] = [
             "taunt":      lib.taunts.randomElement() ?? "Встань і розімнись.",
             "doneLine":   lib.done_lines.randomElement() ?? "Молодець.",
@@ -642,6 +769,8 @@ final class Controller: NSObject, NSApplicationDelegate, NSMenuDelegate, WKScrip
             "steps":      current.steps,
             "todayCount": doneToday(),
             "goal":       cfg.goal,
+            "volume":     Double(cfg.volume) / 100,
+            "interval":   cfg.intervalMinutes,
             "muted":      wv !== primaryWebView
         ]
         guard let d = try? JSONSerialization.data(withJSONObject: payload),
@@ -657,6 +786,12 @@ final class Controller: NSObject, NSApplicationDelegate, NSMenuDelegate, WKScrip
         guard !handled else { return }
         handled = true
         switch action {
+        case "dnd":
+            // «Не турбувати»: the same pause as in the menu bar, straight from the overlay.
+            let mins = body["minutes"] as? Int ?? 60
+            setPaused(until: mins < 0 ? Calendar.current.startOfDay(for: Date()).addingTimeInterval(24 * 3600)
+                                      : Date().addingTimeInterval(Double(mins) * 60))
+            close(reason: "dnd")
         case "done", "skip", "ignored": close(reason: action)
         case "snooze":                  snooze()
         default: break
