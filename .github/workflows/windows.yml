@@ -1,0 +1,38 @@
+# Builds the Windows version (windows/) and attaches a ready-to-run zip to the run.
+# The Mac app is not touched by this workflow.
+name: Windows build
+
+on:
+  push:
+    paths: ["windows/**", "web/**", "data/**", ".github/workflows/windows.yml"]
+  pull_request:
+    paths: ["windows/**", "web/**", "data/**", ".github/workflows/windows.yml"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Build
+        shell: pwsh
+        run: ./windows/build.ps1 -Runtime win-x64
+      - name: Smoke test (--check, --devices)
+        shell: pwsh
+        run: |
+          $exe = "windows/dist/Potyagus/Potyagus.exe"
+          if (-not (Test-Path $exe)) { throw "no exe" }
+          foreach ($f in "web/overlay.html", "web/clips/idle.mp4", "web/sfx/honk.m4a", "exercises.json") {
+            if (-not (Test-Path "windows/dist/Potyagus/$f")) { throw "missing $f" }
+          }
+          $p = Start-Process $exe -ArgumentList "--check" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "--check exited $($p.ExitCode)" }
+          $p = Start-Process $exe -ArgumentList "--devices" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "--devices exited $($p.ExitCode)" }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Potyagus-windows-x64
+          path: windows/dist/Potyagus/
