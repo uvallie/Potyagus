@@ -4,10 +4,9 @@
 
 | Файл | Що робить |
 |---|---|
-| `potyagus.iss` | скрипт Inno Setup: ставить у `%LOCALAPPDATA%\Programs\Potyagus` без прав адміна, ярлик у «Пуску», автозапуск (`HKCU\…\Run`, значення `Potyagus`), за потреби докачує WebView2 |
+| `potyagus.iss` | скрипт Inno Setup (іконка з `windows/potyagus.ico`): ставить у `%LOCALAPPDATA%\Programs\Potyagus` без прав адміна, ярлик у «Пуску», автозапуск (`HKCU\…\Run`, значення `Potyagus`), за потреби докачує WebView2 |
 | `build.ps1` | `dotnet publish` (self-contained, win-x64) → підпис → Inno Setup → підпис |
 | `sign.ps1` | підписує файл, якщо є сертифікат; без нього пропускає |
-| `potyagus.ico` | іконка інсталятора, з `art/icon/icon-1024.png` |
 
 ## Реліз
 

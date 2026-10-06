@@ -18,13 +18,13 @@ if (-not $Project) { throw 'Windows shell project not found: expected windows\**
 Write-Host "→ project: $Project"
 
 Remove-Item $dist -Recurse -Force -ErrorAction SilentlyContinue
-# dotnet хоче числову версію; для dev-збірок лишається 0.0.0.
-$numeric = if ($Version -match '^\d+(\.\d+){0,3}$') { $Version } else { '0.0.0' }
-dotnet publish $Project -c Release -r win-x64 --self-contained true `
-  -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
-  -p:Version=$numeric -o $publish
+# Ті самі прапорці, що й у windows\build.ps1. dotnet хоче числову версію, тож dev-збірки беруть її з csproj.
+$publishArgs = @('-c', 'Release', '-r', 'win-x64', '--self-contained', 'true',
+  '-p:PublishSingleFile=true', '-p:IncludeNativeLibrariesForSelfExtract=true',
+  '-p:EnableCompressionInSingleFile=true', '-p:DebugType=none', '-o', $publish)
+if ($Version -match '^\d+(\.\d+){0,3}$') { $publishArgs += "-p:Version=$Version" }
+dotnet publish $Project @publishArgs
 if ($LASTEXITCODE) { throw "dotnet publish failed ($LASTEXITCODE)" }
-Get-ChildItem $publish -Filter *.pdb | Remove-Item
 
 $exe = Get-ChildItem $publish -Filter *.exe | Where-Object Name -ne 'createdump.exe' |
   Sort-Object { $_.Name -ne 'Potyagus.exe' } | Select-Object -First 1

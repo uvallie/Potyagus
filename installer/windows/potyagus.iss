@@ -33,7 +33,7 @@ ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0
 OutputDir={#OutputDir}
 OutputBaseFilename=Potyagus-{#AppVersion}-Setup
-SetupIconFile=potyagus.ico
+SetupIconFile=..\..\windows\potyagus.ico
 UninstallDisplayIcon={app}\{#AppExe}
 UninstallDisplayName=Потягусь
 WizardStyle=modern
@@ -72,8 +72,8 @@ Filename: "{app}\{#AppExe}"; Description: "{cm:LaunchProgram,Потягусь}";
 Filename: "{sys}\taskkill.exe"; Parameters: "/F /IM {#AppExe}"; Flags: runhidden; RunOnceId: "StopPotyagus"
 
 [UninstallDelete]
-; Кеш WebView2 поруч з exe. Історія в %APPDATA%\Potyagus лишається.
-Type: filesandordirs; Name: "{app}\*.WebView2"
+; Профіль WebView2 шелла. Історія й налаштування в %APPDATA%\Potyagus лишаються.
+Type: filesandordirs; Name: "{localappdata}\Potyagus\WebView2"
 
 [Code]
 const
