@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Потягусь для Windows: та сама web/overlay.html у WebView2, без жодної правки.
+       Збирати: windows/build.ps1 (або dotnet publish, див. windows/README.md). -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- lets `dotnet build` type-check this on macOS/Linux too -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <AssemblyName>Potyagus</AssemblyName>
+    <RootNamespace>Potyagus</RootNamespace>
+    <ApplicationIcon>potyagus.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <Version>0.3.0</Version>
+    <Product>Потягусь</Product>
+    <Company>Alina Uvarova</Company>
+    <InvariantGlobalization>false</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2849.39" />
+  </ItemGroup>
+
+  <!-- The page and its media come straight from the shared web/ and data/ folders,
+       so the Mac and Windows builds never drift apart. -->
+  <ItemGroup>
+    <Content Include="..\web\overlay.html" Link="web\overlay.html" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
+    <Content Include="..\web\clips\*.mp4" Link="web\clips\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
+    <Content Include="..\web\sfx\*.m4a" Link="web\sfx\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
+    <Content Include="..\data\exercises.json" Link="exercises.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
+  </ItemGroup>
+
+</Project>

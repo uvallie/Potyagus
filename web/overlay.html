@@ -138,9 +138,6 @@
     font-size:clamp(14px,1.05vw,17px);font-weight:600;color:var(--ink-dim);
     background:rgba(255,255,255,.7);border:1px solid rgba(30,58,36,.16)}
   .btn-ghost:hover{background:rgba(255,255,255,.8);color:var(--ink)}
-  .btn-skip{background:none;border:0;color:var(--ink);opacity:.78;font-size:clamp(13px,.95vw,16px);
-    padding:10px 6px;text-decoration:underline;text-underline-offset:4px;text-decoration-color:rgba(30,58,36,.45)}
-  .btn-skip:hover{opacity:1}
 
   /* ---------- «не турбувати»: вибір тривалості просто над кнопкою ---------- */
   .dnd{position:relative}
@@ -669,7 +666,6 @@
             <button data-dnd="-1">До кінця дня</button>
           </div>
         </div>
-        <button class="btn-skip" id="btnSkip">пропустити цю годину</button>
       </div>
       <div class="hint">Клацни будь-де або натисни <kbd>пробіл</kbd>, коли вже стоїш.</div>
     </div>
@@ -699,7 +695,6 @@
             <button data-dnd="-1">До кінця дня</button>
           </div>
         </div>
-        <button class="btn-skip" id="btnSkip2">пропустити цю годину</button>
       </div>
     </div>
   </div>
@@ -836,8 +831,6 @@ function render(){
   }
   $("footText").textContent = "Сьогодні розім'ялась: " + DATA.todayCount + " / " + goal;
 
-  const skipText = DATA.interval === 60 ? "пропустити цю годину" : "пропустити цього разу";
-  $("btnSkip").textContent = $("btnSkip2").textContent = skipText;
 
   total = left = DATA.seconds;
   $("num").textContent = left;
@@ -1009,8 +1002,6 @@ window.addEventListener("keydown", e => { if ((e.code === "Space" || e.code === 
 $("btnDone").onclick    = () => finish("done");
 $("btnSnooze").onclick  = e => { e.stopPropagation(); finish("snooze"); };
 $("btnSnooze2").onclick = () => finish("snooze");
-$("btnSkip").onclick    = e => { e.stopPropagation(); finish("skip"); };
-$("btnSkip2").onclick   = () => finish("skip");
 document.querySelectorAll(".dnd").forEach(box => {
   box.querySelector("[data-dnd-toggle]").onclick = e => { e.stopPropagation(); box.classList.toggle("open"); };
   box.querySelectorAll("[data-dnd]").forEach(b => b.onclick = e => {
