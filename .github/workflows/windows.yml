@@ -12,6 +12,8 @@ on:
 jobs:
   build:
     runs-on: windows-latest
+    permissions:
+      contents: write   # only for the screenshots ref below
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
@@ -36,3 +38,24 @@ jobs:
         with:
           name: Potyagus-windows-x64
           path: windows/dist/Potyagus/
+      - name: Screen test (show the goose, start, finish, screenshots)
+        shell: pwsh
+        run: ./windows/ci/screen-test.ps1 -Exe windows/dist/Potyagus/Potyagus.exe -Out windows/dist/screens
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Potyagus-windows-screens
+          path: windows/dist/screens/
+      # Screenshots also go to a hidden ref (not a branch, not shown in the UI), so they can be
+      # fetched with `git fetch origin refs/ci-screens/windows` without downloading artifacts.
+      - name: Publish screenshots to refs/ci-screens/windows
+        if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        shell: bash
+        run: |
+          [ -d windows/dist/screens ] || exit 0
+          cd windows/dist/screens
+          git init -q
+          git add -A
+          git -c user.name="github-actions" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "Windows screen test for ${{ github.sha }}"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:refs/ci-screens/windows
