@@ -14,7 +14,12 @@ public static class Input {
     [DllImport("user32.dll")] public static extern void keybd_event(byte vk, byte scan, uint flags, UIntPtr extra);
     [DllImport("user32.dll")] public static extern bool SetCursorPos(int x, int y);
     [DllImport("user32.dll")] public static extern void mouse_event(uint flags, int dx, int dy, uint data, UIntPtr extra);
-    public static void Key(byte vk) { keybd_event(vk, 0, 0, UIntPtr.Zero); keybd_event(vk, 0, 2, UIntPtr.Zero); }
+    [DllImport("user32.dll")] static extern uint MapVirtualKey(uint code, uint mapType);
+    // With the real scan code: the page checks KeyboardEvent.code, which Chromium derives from it.
+    public static void Key(byte vk) {
+        byte scan = (byte)MapVirtualKey(vk, 0);
+        keybd_event(vk, scan, 0, UIntPtr.Zero); keybd_event(vk, scan, 2, UIntPtr.Zero);
+    }
     [DllImport("user32.dll")] static extern IntPtr GetForegroundWindow();
     [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint pid);
     public static uint ForegroundPid() { uint pid; GetWindowThreadProcessId(GetForegroundWindow(), out pid); return pid; }
