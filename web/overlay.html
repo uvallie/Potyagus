@@ -7,7 +7,8 @@
   :root{
     --ink:#1E3A24; --ink-dim:#587A5B; --ink-faint:#8AA58B;
     --accent:#E8801F; --accent-2:#F5A94B; --good:#2E7D4F;
-    --card:rgba(255,255,255,.55);
+    --card:rgba(255,255,255,.84);
+    --grass:#157A44; --on-grass:#FFF6E8;   /* текст просто на траві — кремовий, темний лишається на картках */
     --horizon:66vh;
   }
   *{margin:0;padding:0;box-sizing:border-box}
@@ -17,12 +18,12 @@
     color:var(--ink);
     /* v2: суцільний лужок того ж зеленого, що й фон відео-кліпів — жодного шва */
     background:
-      radial-gradient(60vw 34vh at 18% 92%, rgba(111,166,88,.55), transparent 70%),
-      radial-gradient(48vw 30vh at 84% 78%, rgba(111,166,88,.45), transparent 70%),
-      radial-gradient(40vw 26vh at 60% 100%, rgba(139,190,110,.5), transparent 70%),
-      radial-gradient(70vw 40vh at 30% 4%, rgba(139,190,110,.45), transparent 70%),
-      radial-gradient(36vw 22vh at 92% 12%, rgba(111,166,88,.35), transparent 70%),
-      #7DB262;
+      radial-gradient(60vw 34vh at 18% 92%, rgba(15,98,54,.55), transparent 70%),
+      radial-gradient(48vw 30vh at 84% 78%, rgba(15,98,54,.45), transparent 70%),
+      radial-gradient(40vw 26vh at 60% 100%, rgba(34,148,86,.45), transparent 70%),
+      radial-gradient(70vw 40vh at 30% 4%, rgba(34,148,86,.4), transparent 70%),
+      radial-gradient(36vw 22vh at 92% 12%, rgba(15,98,54,.35), transparent 70%),
+      var(--grass);
     -webkit-user-select:none; user-select:none; cursor:default;
   }
 
@@ -77,15 +78,15 @@
 
   /* ---------- right panel ---------- */
   .panel{display:flex;flex-direction:column;justify-content:center;gap:clamp(10px,1.8vh,22px);max-width:760px}
-  .kicker{font-size:clamp(12px,.9vw,14px);letter-spacing:.32em;text-transform:uppercase;color:var(--ink);opacity:.72}
+  .kicker{font-size:clamp(12px,.9vw,14px);letter-spacing:.32em;text-transform:uppercase;color:var(--on-grass);opacity:.85}
   .brand{
     font-size:clamp(64px,7.4vw,124px);line-height:.92;font-weight:800;letter-spacing:-.045em;
-    color:var(--ink);text-wrap:balance;margin:2px 0 6px;
+    color:var(--on-grass);text-wrap:balance;margin:2px 0 6px;
   }
   .brand em{font-style:normal;color:var(--accent)}
   .taunt{
     font-size:clamp(22px,2.3vw,36px);line-height:1.2;font-weight:600;letter-spacing:-.015em;
-    color:var(--ink);text-wrap:balance;max-width:26ch;
+    color:var(--on-grass);text-wrap:balance;max-width:26ch;
   }
 
   .card{
@@ -109,7 +110,7 @@
 
   ol.steps{list-style:none;display:flex;flex-direction:column;gap:clamp(8px,1.2vh,14px);padding-left:4px}
   ol.steps li{display:flex;gap:14px;align-items:flex-start;
-    font-size:clamp(15px,1.25vw,21px);line-height:1.4;color:var(--ink);
+    font-size:clamp(15px,1.25vw,21px);line-height:1.4;color:var(--on-grass);
     opacity:0;transform:translateX(-12px);animation:slidein .45s cubic-bezier(.2,.9,.25,1) forwards}
   ol.steps li:nth-child(1){animation-delay:.10s}
   ol.steps li:nth-child(2){animation-delay:.22s}
@@ -133,13 +134,13 @@
   .btn-primary:hover{transform:translateY(-2px);box-shadow:0 18px 40px -12px rgba(232,128,31,.8)}
   .btn-primary.pulse{animation:pulse 1.7s ease-in-out infinite}
   @keyframes pulse{0%,100%{transform:none}50%{transform:translateY(-3px) scale(1.025)}}
-  .btn-primary.good{background:linear-gradient(96deg,#5FB07E,#2E7D4F);box-shadow:0 12px 30px -10px rgba(46,125,79,.6)}
+  .btn-primary.good{background:var(--on-grass);color:var(--good);box-shadow:0 12px 30px -10px rgba(12,40,24,.7)}   /* зелена кнопка на темній траві губилась */
   .btn-ghost{padding:clamp(12px,1.3vh,17px) clamp(20px,1.9vw,30px);
     font-size:clamp(14px,1.05vw,17px);font-weight:600;color:var(--ink-dim);
-    background:rgba(255,255,255,.7);border:1px solid rgba(30,58,36,.16)}
-  .btn-ghost:hover{background:rgba(255,255,255,.8);color:var(--ink)}
-  .btn-skip{background:none;border:0;color:var(--ink);opacity:.78;font-size:clamp(13px,.95vw,16px);
-    padding:10px 6px;text-decoration:underline;text-underline-offset:4px;text-decoration-color:rgba(30,58,36,.45)}
+    background:rgba(255,255,255,.88);border:1px solid rgba(30,58,36,.16)}
+  .btn-ghost:hover{background:rgba(255,255,255,.96);color:var(--ink)}
+  .btn-skip{background:none;border:0;color:var(--on-grass);opacity:.85;font-size:clamp(13px,.95vw,16px);
+    padding:10px 6px;text-decoration:underline;text-underline-offset:4px;text-decoration-color:rgba(255,246,232,.5)}
   .btn-skip:hover{opacity:1}
 
   /* ---------- «не турбувати»: вибір тривалості просто над кнопкою ---------- */
@@ -150,11 +151,11 @@
   .dnd.open .dnd-menu{display:flex}
   .dnd-menu button{text-align:left;padding:10px 14px;border-radius:12px;background:none;
     font-size:clamp(14px,1.05vw,17px);font-weight:600;color:var(--ink)}
-  .dnd-menu button:hover{background:rgba(125,178,98,.28)}
+  .dnd-menu button:hover{background:rgba(21,122,68,.16)}
 
-  .hint{font-size:clamp(13px,1vw,16px);color:var(--ink);opacity:.82;margin-top:-4px}
+  .hint{font-size:clamp(13px,1vw,16px);color:var(--on-grass);opacity:.9;margin-top:-4px}
   .hint kbd{font:inherit;font-size:.85em;padding:2px 8px;border-radius:6px;
-    background:rgba(255,255,255,.7);border:1px solid rgba(30,58,36,.15)}
+    background:rgba(255,255,255,.9);color:var(--ink);border:1px solid rgba(30,58,36,.15)}
 
   .only-idle,.only-active{display:flex;flex-direction:column;gap:clamp(14px,2vh,22px)}
   /* ---------- states ---------- */
@@ -171,7 +172,7 @@
     color:var(--accent);animation:pop .9s cubic-bezier(.2,1.3,.4,1) both;
   }
   .count small{display:block;text-align:center;font-size:clamp(14px,1.2vw,20px);
-    color:var(--ink);opacity:.8;letter-spacing:.2em;text-transform:uppercase;margin-top:10px}
+    color:var(--on-grass);opacity:.9;letter-spacing:.2em;text-transform:uppercase;margin-top:10px}
   @keyframes pop{0%{transform:scale(.4);opacity:0}45%{transform:scale(1.08);opacity:1}100%{transform:scale(1)}}
 
   /* ---------- footer ---------- */
@@ -191,7 +192,7 @@
   .confetti i{position:absolute;top:-20px;width:10px;height:14px;border-radius:2px;opacity:0;animation:fall linear forwards}
   @keyframes fall{0%{opacity:1;transform:translateY(-10vh) rotate(0)}100%{opacity:.15;transform:translateY(112vh) rotate(760deg)}}
   .bye{position:fixed;inset:0;z-index:6;display:grid;place-items:center;
-    background:rgba(234,243,225,.6);backdrop-filter:blur(14px);opacity:0;pointer-events:none;transition:opacity .45s ease}
+    background:rgba(234,243,225,.86);backdrop-filter:blur(14px);opacity:0;pointer-events:none;transition:opacity .45s ease}
   .bye.show{opacity:1}
   .bye p{font-size:clamp(26px,2.8vw,46px);font-weight:800;text-align:center;max-width:22ch;text-wrap:balance;
     color:var(--good);letter-spacing:-.02em;transform:translateY(14px) scale(.96);transition:transform .5s cubic-bezier(.2,1.3,.4,1)}
@@ -534,16 +535,16 @@
 <body data-state="idle">
 
 
-<svg class="tuft" style="left:6vw;top:calc(var(--horizon) - 30px)" viewBox="0 0 70 40"><path fill="#4F8A3E" d="M4 40 C 8 24, 6 14, 2 4 C 12 10, 18 22, 20 40 Z M22 40 C 24 22, 30 12, 36 2 C 34 16, 32 28, 30 40 Z M40 40 C 44 26, 54 18, 66 12 C 56 22, 50 30, 48 40 Z"/></svg>
-<svg class="tuft" style="left:36vw;top:calc(var(--horizon) - 26px);width:clamp(30px,3vw,52px)" viewBox="0 0 70 40"><path fill="#4F8A3E" d="M4 40 C 8 24, 6 14, 2 4 C 12 10, 18 22, 20 40 Z M22 40 C 24 22, 30 12, 36 2 C 34 16, 32 28, 30 40 Z M40 40 C 44 26, 54 18, 66 12 C 56 22, 50 30, 48 40 Z"/></svg>
-<svg class="tuft" style="right:9vw;top:calc(var(--horizon) - 28px)" viewBox="0 0 70 40"><path fill="#4F8A3E" d="M4 40 C 8 24, 6 14, 2 4 C 12 10, 18 22, 20 40 Z M22 40 C 24 22, 30 12, 36 2 C 34 16, 32 28, 30 40 Z M40 40 C 44 26, 54 18, 66 12 C 56 22, 50 30, 48 40 Z"/></svg>
+<svg class="tuft" style="left:6vw;top:calc(var(--horizon) - 30px)" viewBox="0 0 70 40"><path fill="#0C4F2B" d="M4 40 C 8 24, 6 14, 2 4 C 12 10, 18 22, 20 40 Z M22 40 C 24 22, 30 12, 36 2 C 34 16, 32 28, 30 40 Z M40 40 C 44 26, 54 18, 66 12 C 56 22, 50 30, 48 40 Z"/></svg>
+<svg class="tuft" style="left:36vw;top:calc(var(--horizon) - 26px);width:clamp(30px,3vw,52px)" viewBox="0 0 70 40"><path fill="#0C4F2B" d="M4 40 C 8 24, 6 14, 2 4 C 12 10, 18 22, 20 40 Z M22 40 C 24 22, 30 12, 36 2 C 34 16, 32 28, 30 40 Z M40 40 C 44 26, 54 18, 66 12 C 56 22, 50 30, 48 40 Z"/></svg>
+<svg class="tuft" style="right:9vw;top:calc(var(--horizon) - 28px)" viewBox="0 0 70 40"><path fill="#0C4F2B" d="M4 40 C 8 24, 6 14, 2 4 C 12 10, 18 22, 20 40 Z M22 40 C 24 22, 30 12, 36 2 C 34 16, 32 28, 30 40 Z M40 40 C 44 26, 54 18, 66 12 C 56 22, 50 30, 48 40 Z"/></svg>
 
-<svg class="bush" style="left:-2vw;top:calc(var(--horizon) - 9vh)" viewBox="0 0 240 110"><path fill="#6FA658" d="M10 110 C 0 70, 30 40, 60 50 C 70 15, 130 10, 150 45 C 190 30, 240 60, 232 110 Z"/><path fill="#5E9549" opacity=".7" d="M60 110 C 62 82, 95 72, 118 86 C 128 66, 170 70, 178 92 C 196 90, 214 100, 214 110 Z"/></svg>
-<svg class="bush" style="right:-3vw;top:calc(var(--horizon) - 6vh);width:clamp(100px,10vw,190px)" viewBox="0 0 240 110"><path fill="#6FA658" d="M8 110 C 4 66, 44 46, 74 60 C 90 22, 150 24, 162 58 C 200 44, 236 74, 230 110 Z"/><path fill="#5E9549" opacity=".7" d="M50 110 C 56 86, 90 78, 108 92 C 122 76, 160 80, 170 100 C 184 96, 200 102, 202 110 Z"/></svg>
-<svg class="tuft" style="left:22vw;top:calc(var(--horizon) + 9vh);width:clamp(26px,2.6vw,44px);opacity:.7" viewBox="0 0 70 40"><path fill="#5E9549" d="M4 40 C 8 24, 6 14, 2 4 C 12 10, 18 22, 20 40 Z M22 40 C 24 22, 30 12, 36 2 C 34 16, 32 28, 30 40 Z M40 40 C 44 26, 54 18, 66 12 C 56 22, 50 30, 48 40 Z"/></svg>
-<svg class="tuft" style="left:58vw;top:calc(var(--horizon) + 14vh);width:clamp(30px,3vw,52px);opacity:.7" viewBox="0 0 70 40"><path fill="#5E9549" d="M4 40 C 8 24, 6 14, 2 4 C 12 10, 18 22, 20 40 Z M22 40 C 24 22, 30 12, 36 2 C 34 16, 32 28, 30 40 Z M40 40 C 44 26, 54 18, 66 12 C 56 22, 50 30, 48 40 Z"/></svg>
-<svg class="tuft" style="right:24vw;top:calc(var(--horizon) - 14vh);width:clamp(24px,2.4vw,40px);opacity:.6" viewBox="0 0 70 40"><path fill="#5E9549" d="M4 40 C 8 24, 6 14, 2 4 C 12 10, 18 22, 20 40 Z M22 40 C 24 22, 30 12, 36 2 C 34 16, 32 28, 30 40 Z M40 40 C 44 26, 54 18, 66 12 C 56 22, 50 30, 48 40 Z"/></svg>
-<svg class="tuft" style="left:44vw;top:calc(var(--horizon) - 22vh);width:clamp(22px,2.2vw,36px);opacity:.55" viewBox="0 0 70 40"><path fill="#5E9549" d="M4 40 C 8 24, 6 14, 2 4 C 12 10, 18 22, 20 40 Z M22 40 C 24 22, 30 12, 36 2 C 34 16, 32 28, 30 40 Z M40 40 C 44 26, 54 18, 66 12 C 56 22, 50 30, 48 40 Z"/></svg>
+<svg class="bush" style="left:-2vw;top:calc(var(--horizon) - 9vh)" viewBox="0 0 240 110"><path fill="#126B3B" d="M10 110 C 0 70, 30 40, 60 50 C 70 15, 130 10, 150 45 C 190 30, 240 60, 232 110 Z"/><path fill="#0F5C33" opacity=".7" d="M60 110 C 62 82, 95 72, 118 86 C 128 66, 170 70, 178 92 C 196 90, 214 100, 214 110 Z"/></svg>
+<svg class="bush" style="right:-3vw;top:calc(var(--horizon) - 6vh);width:clamp(100px,10vw,190px)" viewBox="0 0 240 110"><path fill="#126B3B" d="M8 110 C 4 66, 44 46, 74 60 C 90 22, 150 24, 162 58 C 200 44, 236 74, 230 110 Z"/><path fill="#0F5C33" opacity=".7" d="M50 110 C 56 86, 90 78, 108 92 C 122 76, 160 80, 170 100 C 184 96, 200 102, 202 110 Z"/></svg>
+<svg class="tuft" style="left:22vw;top:calc(var(--horizon) + 9vh);width:clamp(26px,2.6vw,44px);opacity:.7" viewBox="0 0 70 40"><path fill="#0F5C33" d="M4 40 C 8 24, 6 14, 2 4 C 12 10, 18 22, 20 40 Z M22 40 C 24 22, 30 12, 36 2 C 34 16, 32 28, 30 40 Z M40 40 C 44 26, 54 18, 66 12 C 56 22, 50 30, 48 40 Z"/></svg>
+<svg class="tuft" style="left:58vw;top:calc(var(--horizon) + 14vh);width:clamp(30px,3vw,52px);opacity:.7" viewBox="0 0 70 40"><path fill="#0F5C33" d="M4 40 C 8 24, 6 14, 2 4 C 12 10, 18 22, 20 40 Z M22 40 C 24 22, 30 12, 36 2 C 34 16, 32 28, 30 40 Z M40 40 C 44 26, 54 18, 66 12 C 56 22, 50 30, 48 40 Z"/></svg>
+<svg class="tuft" style="right:24vw;top:calc(var(--horizon) - 14vh);width:clamp(24px,2.4vw,40px);opacity:.6" viewBox="0 0 70 40"><path fill="#0F5C33" d="M4 40 C 8 24, 6 14, 2 4 C 12 10, 18 22, 20 40 Z M22 40 C 24 22, 30 12, 36 2 C 34 16, 32 28, 30 40 Z M40 40 C 44 26, 54 18, 66 12 C 56 22, 50 30, 48 40 Z"/></svg>
+<svg class="tuft" style="left:44vw;top:calc(var(--horizon) - 22vh);width:clamp(22px,2.2vw,36px);opacity:.55" viewBox="0 0 70 40"><path fill="#0F5C33" d="M4 40 C 8 24, 6 14, 2 4 C 12 10, 18 22, 20 40 Z M22 40 C 24 22, 30 12, 36 2 C 34 16, 32 28, 30 40 Z M40 40 C 44 26, 54 18, 66 12 C 56 22, 50 30, 48 40 Z"/></svg>
 
 <div class="stage" id="stage">
   <div class="charwrap">
@@ -736,7 +737,8 @@ const VIEW = {
   lunge:"front", squat:"front", wrists:"side", calf:"side", hip:"side",
   eyes:"side", catcow:"side", sidebend:"front", walk:"side", jacks:"front",
   knees:"front", neckroll:"front", ankles:"side", chintuck:"side",
-  wingcircles:"front", backbend:"side", breathe:"front", toes:"side", shake:"front"
+  wingcircles:"front", backbend:"side", breathe:"front", toes:"side", shake:"front",
+  onefoot:"front", roundback:"side", hiss:"side"
 };
 
 let state = "idle", total = 30, left = 30, tick = null, finished = false, closing = false, startedAt = null;
@@ -757,7 +759,7 @@ if (USE_CLIPS) document.body.classList.add("clips");
 const clip = $("clip"), slot = $("gooseSlot");
 let clipToken = 0;
 
-/* хромакей: зелений #7DB262 → прозорість, м'який край, щоб пір'я не «різалось» */
+/* хромакей: зелений фон кліпу → прозорість, м'який край, щоб пір'я не «різалось» */
 const cv = $("clipCanvas"), cx = cv.getContext("2d", { willReadFrequently: true });
 const SOFT_IN = 22, SOFT_OUT = 58;
 let rafId = 0;
