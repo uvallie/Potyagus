@@ -134,10 +134,16 @@ begin
     SuppressibleMsgBox(CustomMessage('WebView2Failed'), mbError, MB_OK, IDOK);
 end;
 
+// Гусь живе в треї без вікна, і Restart Manager не вміє його закрити, тож при оновленні зупиняємо його самі.
 // У тихому режимі (/VERYSILENT) сторінок майстра немає, тож WebView2 докачуємо тут, без прогрес-бару.
 function PrepareToInstall(var NeedsRestart: Boolean): String;
+var
+  ResultCode: Integer;
 begin
   Result := '';
+  Exec(ExpandConstant('{sys}\taskkill.exe'), '/F /IM {#AppExe}', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  if ResultCode = 0 then
+    Sleep(500);
   if not WizardSilent or WebView2Installed then
     exit;
   try

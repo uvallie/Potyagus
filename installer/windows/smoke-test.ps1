@@ -19,6 +19,7 @@ function Check([bool]$ok, [string]$what) {
 
 function Install([string]$log) {
   $p = Start-Process $Setup -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', "/LOG=`"$logs\$log`"" -Wait -PassThru
+  if ($p.ExitCode -ne 0) { Get-Content "$logs\$log" -Tail 40 -ErrorAction SilentlyContinue }
   Check ($p.ExitCode -eq 0) "setup exit code 0 ($log, got $($p.ExitCode))"
 }
 
