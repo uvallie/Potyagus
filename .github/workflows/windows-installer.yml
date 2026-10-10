@@ -53,6 +53,18 @@ jobs:
           WINDOWS_CERT_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
         run: ./installer/windows/build.ps1 -Version '${{ steps.ver.outputs.version }}'
 
+      - name: Smoke test (install, run, upgrade, uninstall)
+        shell: pwsh
+        run: ./installer/windows/smoke-test.ps1 -Setup 'dist/windows/Potyagus-${{ steps.ver.outputs.version }}-Setup.exe'
+
+      - name: Upload smoke test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-logs-${{ steps.ver.outputs.version }}
+          path: dist/windows/smoke-logs/
+          if-no-files-found: ignore
+
       - uses: actions/upload-artifact@v4
         with:
           name: Potyagus-${{ steps.ver.outputs.version }}-Setup

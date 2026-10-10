@@ -6,6 +6,7 @@
 |---|---|
 | `potyagus.iss` | скрипт Inno Setup (іконка з `windows/potyagus.ico`): ставить у `%LOCALAPPDATA%\Programs\Potyagus` без прав адміна, ярлик у «Пуску», автозапуск (`HKCU\…\Run`, значення `Potyagus`), за потреби докачує WebView2 |
 | `build.ps1` | `dotnet publish` (self-contained, win-x64) → підпис → Inno Setup → підпис |
+| `smoke-test.ps1` | CI-перевірка на чистій Windows: тихо ставить, перевіряє файли, автозапуск, ярлик, запускає гуся, ставить поверх запущеного, видаляє і перевіряє, що все прибрано |
 | `sign.ps1` | підписує файл, якщо є сертифікат; без нього пропускає |
 
 ## Реліз

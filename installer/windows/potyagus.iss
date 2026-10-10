@@ -99,6 +99,13 @@ begin
     Result := HasVersion(HKCU, 'Software\Microsoft\EdgeUpdate\Clients\' + WebView2Guid);
 end;
 
+procedure InstallWebView2;
+var
+  ResultCode: Integer;
+begin
+  Exec(ExpandConstant('{tmp}\MicrosoftEdgeWebview2Setup.exe'), '/silent /install', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+end;
+
 procedure InitializeWizard;
 begin
   DownloadPage := CreateDownloadPage(SetupMessage(msgWizardPreparing), SetupMessage(msgPreparingDesc), nil);
@@ -106,8 +113,6 @@ end;
 
 // WebView2 є у Windows 11 і в оновленій Windows 10. Якщо його нема, тихо ставимо bootstrapper від Microsoft.
 function NextButtonClick(CurPageID: Integer): Boolean;
-var
-  ResultCode: Integer;
 begin
   Result := True;
   if (CurPageID <> wpReady) or WebView2Installed then
@@ -118,7 +123,7 @@ begin
   try
     try
       DownloadPage.Download;
-      Exec(ExpandConstant('{tmp}\MicrosoftEdgeWebview2Setup.exe'), '/silent /install', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+      InstallWebView2;
     except
       Log('WebView2: ' + GetExceptionMessage);
     end;
@@ -127,4 +132,18 @@ begin
   end;
   if not WebView2Installed then
     SuppressibleMsgBox(CustomMessage('WebView2Failed'), mbError, MB_OK, IDOK);
+end;
+
+// У тихому режимі (/VERYSILENT) сторінок майстра немає, тож WebView2 докачуємо тут, без прогрес-бару.
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+begin
+  Result := '';
+  if not WizardSilent or WebView2Installed then
+    exit;
+  try
+    DownloadTemporaryFile(WebView2Url, 'MicrosoftEdgeWebview2Setup.exe', '', nil);
+    InstallWebView2;
+  except
+    Log('WebView2: ' + GetExceptionMessage);
+  end;
 end;
