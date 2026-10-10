@@ -1,0 +1,79 @@
+# Збирає Windows-інсталятор (Inno Setup) з шелла в windows/.
+# - вручну (Actions → Windows installer → Run workflow) і на PR: інсталятор лежить в артефактах прогону;
+# - при публікації релізу в GitHub Releases: Potyagus-<версія>-Setup.exe додається до релізу поруч із DMG.
+name: Windows installer
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'windows/**'
+      - 'installer/windows/**'
+      - 'web/**'
+      - 'data/**'
+      - '.github/workflows/windows-installer.yml'
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress -y
+
+      - name: Version
+        id: ver
+        shell: pwsh
+        run: |
+          if ('${{ github.event_name }}' -eq 'release') {
+            $v = '${{ github.event.release.tag_name }}' -replace '^v', ''
+          } else {
+            $v = "dev-$('${{ github.sha }}'.Substring(0, 7))"
+          }
+          "version=$v" >> $env:GITHUB_OUTPUT
+
+      - name: Build installer
+        shell: pwsh
+        env:
+          WINDOWS_CERT_PFX_BASE64: ${{ secrets.WINDOWS_CERT_PFX_BASE64 }}
+          WINDOWS_CERT_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
+        run: ./installer/windows/build.ps1 -Version '${{ steps.ver.outputs.version }}'
+
+      - name: Smoke test (install, run, upgrade, uninstall)
+        shell: pwsh
+        run: ./installer/windows/smoke-test.ps1 -Setup 'dist/windows/Potyagus-${{ steps.ver.outputs.version }}-Setup.exe'
+
+      - name: Upload smoke test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-logs-${{ steps.ver.outputs.version }}
+          path: dist/windows/smoke-logs/
+          if-no-files-found: ignore
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Potyagus-${{ steps.ver.outputs.version }}-Setup
+          path: dist/windows/Potyagus-*-Setup.exe
+          if-no-files-found: error
+
+      - name: Attach to release
+        if: github.event_name == 'release'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload '${{ github.event.release.tag_name }}' "dist/windows/Potyagus-${{ steps.ver.outputs.version }}-Setup.exe" --clobber --repo '${{ github.repository }}'
