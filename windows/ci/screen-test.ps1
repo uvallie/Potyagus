@@ -15,6 +15,9 @@ public static class Input {
     [DllImport("user32.dll")] public static extern bool SetCursorPos(int x, int y);
     [DllImport("user32.dll")] public static extern void mouse_event(uint flags, int dx, int dy, uint data, UIntPtr extra);
     public static void Key(byte vk) { keybd_event(vk, 0, 0, UIntPtr.Zero); keybd_event(vk, 0, 2, UIntPtr.Zero); }
+    [DllImport("user32.dll")] static extern IntPtr GetForegroundWindow();
+    [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint pid);
+    public static uint ForegroundPid() { uint pid; GetWindowThreadProcessId(GetForegroundWindow(), out pid); return pid; }
     public static void Click(int x, int y) { SetCursorPos(x, y); mouse_event(2, 0, 0, 0, UIntPtr.Zero); mouse_event(4, 0, 0, 0, UIntPtr.Zero); }
 }
 "@
@@ -41,6 +44,8 @@ $p = Start-Process $Exe -ArgumentList "--now" -PassThru
 Start-Sleep -Seconds 12
 if ($p.HasExited) { throw "Potyagus exited before showing anything (code $($p.ExitCode))" }
 Shot "1-idle"
+$fg = [Input]::ForegroundPid()
+Write-Host "foreground: pid $fg $((Get-Process -Id $fg -ErrorAction SilentlyContinue).ProcessName) (goose is pid $($p.Id))"
 
 # Space starts the exercise only if the overlay really took keyboard focus.
 [Input]::Key(0x20)

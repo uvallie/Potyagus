@@ -85,6 +85,9 @@ sealed class OverlayForm : Form
         {
             if (!e.IsSuccess) { Log.Write($"overlay failed to load: {e.WebErrorStatus}"); return; }
             await core.ExecuteScriptAsync($"window.rozimnysInit({payloadJson})");
+            // Focus again once the page exists: before that WebView2 has nowhere to put it,
+            // and without it Space / Enter go to whatever app was in front.
+            if (Primary) TakeFocus();
         };
         // Links never leave the overlay.
         core.NewWindowRequested += (_, e) => e.Handled = true;
@@ -99,11 +102,14 @@ sealed class OverlayForm : Form
         Show();
         Native.SetWindowPos(Handle, Native.HwndTopmost, Screen.Bounds.X, Screen.Bounds.Y,
                             Screen.Bounds.Width, Screen.Bounds.Height, Native.SwpShowWindow);
-        if (Primary)
-        {
-            Native.ForceForeground(Handle);
-            web.Focus();
-        }
+        if (Primary) TakeFocus();
+    }
+
+    void TakeFocus()
+    {
+        Native.ForceForeground(Handle);
+        Activate();
+        web.Focus();
     }
 
     /// Moving between monitors with different scaling must not resize us off the screen.
@@ -153,6 +159,9 @@ static class Native
     [DllImport("user32.dll")] static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool attach);
     [DllImport("user32.dll")] static extern bool BringWindowToTop(IntPtr hWnd);
     [DllImport("kernel32.dll")] static extern uint GetCurrentThreadId();
+    [DllImport("user32.dll")] static extern void keybd_event(byte vk, byte scan, uint flags, UIntPtr extra);
+    const byte VkMenu = 0x12;
+    const uint KeyEventFKeyUp = 0x0002;
 
     /// Windows refuses SetForegroundWindow from a background process unless it is attached to
     /// the input of the current foreground thread — the overlay is the one time we want focus.
@@ -162,8 +171,12 @@ static class Native
         var fgThread = fg == IntPtr.Zero ? 0 : GetWindowThreadProcessId(fg, IntPtr.Zero);
         var me = GetCurrentThreadId();
         var attached = fgThread != 0 && fgThread != me && AttachThreadInput(me, fgThread, true);
+        // Holding Alt lifts the foreground lock for this process. It is released only after we
+        // are in front, so the app we take over from never sees a lone Alt tap (no menu pops up).
+        keybd_event(VkMenu, 0, 0, UIntPtr.Zero);
         BringWindowToTop(hwnd);
         SetForegroundWindow(hwnd);
+        keybd_event(VkMenu, 0, KeyEventFKeyUp, UIntPtr.Zero);
         if (attached) AttachThreadInput(me, fgThread, false);
     }
 }
