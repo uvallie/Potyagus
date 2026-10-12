@@ -323,6 +323,7 @@ sealed class Agent : ApplicationContext
             ["interval"]   = cfg.IntervalMinutes,
             ["muted"]      = muted,
         };
+        if (Donation.AskDays(cfg) is int days) payload["donate"] = new Dictionary<string, int> { ["days"] = days };
         return JsonSerializer.Serialize(payload, Json.Compact);
     }
 
@@ -354,6 +355,12 @@ sealed class Agent : ApplicationContext
                 Close("dnd");
                 break;
             case "done": case "skip": case "ignored":
+                // Answer to «кинь гусеві в банку», shown after a finished exercise.
+                if (body["donate"] is JsonValue dv && dv.TryGetValue<string>(out var answer))
+                {
+                    Donation.Answered(answer);
+                    if (answer == "open") OpenInBrowser(Donation.Url);
+                }
                 Close(action);
                 break;
             case "snooze":
@@ -363,6 +370,12 @@ sealed class Agent : ApplicationContext
                 handled = false;
                 break;
         }
+    }
+
+    static void OpenInBrowser(string url)
+    {
+        try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true }); }
+        catch (Exception e) { Log.Write("open " + url + ": " + e.Message); }
     }
 
     void LogResult(string reason) => History.Append(new()

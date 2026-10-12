@@ -23,6 +23,7 @@ static class Paths
     public static string Config  => Path.Combine(Support, "config.json");
     public static string Pause   => Path.Combine(Support, "paused-until");
     public static string Log     => Path.Combine(Support, "agent.log");
+    public static string State   => Path.Combine(Support, "state.json");
 
     /// Next to Potyagus.exe: web\overlay.html, web\clips, web\sfx, exercises.json.
     public static string AppDir  => AppContext.BaseDirectory;
@@ -85,6 +86,8 @@ sealed class Config
     public int Volume = 100;
     public bool ShowMenuBarIcon = true;
     public List<string> DisabledExercises = new();
+    /// «Кинь гусеві в банку» after a few days of real use. `false` in config.json switches it off.
+    public bool DonateAsk = true;
 
     public static Config Load()
     {
@@ -107,6 +110,7 @@ sealed class Config
         if (Int(j, "volume") is int v) c.Volume = Math.Clamp(v, 0, 100);
         if (Bool(j, "showMenuBarIcon") is bool si) c.ShowMenuBarIcon = si;
         if (Strings(j, "disabledExercises") is { } de) c.DisabledExercises = de;
+        if (Bool(j, "donateAsk") is bool da) c.DonateAsk = da;
         return c;
     }
 
@@ -196,20 +200,63 @@ static class History
         return rows;
     }
 
-    public static int DoneToday()
-    {
-        var today = DateTime.Now.Date;
-        return Lines().Count(r =>
-            r["reason"] is JsonValue rv && rv.TryGetValue<string>(out var reason) && reason == "done"
-            && r["ts"] is JsonValue ts && ts.TryGetValue<double>(out var t)
-            && DateTimeOffset.FromUnixTimeMilliseconds((long)(t * 1000)).LocalDateTime.Date == today);
-    }
+    /// Local dates of every finished exercise.
+    static IEnumerable<DateTime> DoneDates() =>
+        Lines().Where(r => r["reason"] is JsonValue rv && rv.TryGetValue<string>(out var reason) && reason == "done")
+               .Select(r => r["ts"] is JsonValue ts && ts.TryGetValue<double>(out var t)
+                            ? DateTimeOffset.FromUnixTimeMilliseconds((long)(t * 1000)).LocalDateTime.Date
+                            : (DateTime?)null)
+               .Where(d => d != null).Select(d => d!.Value);
+
+    public static int DoneToday() => DoneDates().Count(d => d == DateTime.Now.Date);
+
+    /// Distinct days on which at least one exercise was finished.
+    public static int ActiveDays() => DoneDates().Distinct().Count();
 
     public static List<string> LastExerciseIds(int n) =>
         n <= 0 ? new()
                : Lines().TakeLast(n)
                         .Select(r => r["exercise"] is JsonValue v && v.TryGetValue<string>(out var s) ? s : null)
                         .Where(s => s != null).Select(s => s!).ToList();
+}
+
+// MARK: - Donation ask
+
+/// The app's own bookkeeping in state.json (not user settings — those live in config.json).
+static class Donation
+{
+    /// The same monobank jar as on potyagus.alinauvarova.com.
+    public const string Url = "https://send.monobank.ua/jar/7LSbjGstiL";
+    /// Days with at least one finished exercise before the goose asks for the first time.
+    const int AfterDays = 4;
+    /// How long the goose stays quiet after an answer: «кинути в банку» / «іншим разом».
+    const double QuietDaysAfterOpen = 90, QuietDaysAfterLater = 7;
+
+    static JsonObject LoadState()
+    {
+        try { return JsonNode.Parse(File.ReadAllText(Paths.State)) as JsonObject ?? new(); }
+        catch { return new(); }
+    }
+
+    /// Number of active days to mention in the ask, or null when it is not time to ask.
+    public static int? AskDays(Config cfg)
+    {
+        if (!cfg.DonateAsk) return null;
+        var days = History.ActiveDays();
+        if (days < AfterDays) return null;
+        if (LoadState()["donateAskAfter"] is JsonValue v && v.TryGetValue<double>(out var next) && History.Now() < next) return null;
+        return days;
+    }
+
+    /// Remembers the answer ("open" or "later") so the goose keeps quiet for a while.
+    public static void Answered(string answer)
+    {
+        var j = LoadState();
+        j["donateAskAfter"] = History.Now() + (answer == "open" ? QuietDaysAfterOpen : QuietDaysAfterLater) * 86400;
+        var sorted = new JsonObject();
+        foreach (var kv in j.OrderBy(kv => kv.Key, StringComparer.Ordinal).ToList()) { j.Remove(kv.Key); sorted[kv.Key] = kv.Value; }
+        try { File.WriteAllText(Paths.State, sorted.ToJsonString(Json.Pretty)); } catch (Exception e) { Log.Write("state: " + e.Message); }
+    }
 }
 
 // MARK: - Pause
