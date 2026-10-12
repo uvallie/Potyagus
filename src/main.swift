@@ -53,6 +53,8 @@ struct Config {
     var showMenuBarIcon = true
     /// Exercise ids unticked in the menu-bar catalogue — the goose never picks these.
     var disabledExercises: [String] = []
+    /// «Кинь гусеві в банку» after a few days of real use. `false` in config.json switches it off.
+    var donateAsk = true
 
     static func load() -> Config {
         var c = Config()
@@ -73,6 +75,7 @@ struct Config {
         if let v = j["volume"]          as? Int  { c.volume = min(max(v, 0), 100) }
         if let v = j["showMenuBarIcon"] as? Bool { c.showMenuBarIcon = v }
         if let v = j["disabledExercises"] as? [String] { c.disabledExercises = v }
+        if let v = j["donateAsk"] as? Bool { c.donateAsk = v }
         return c
     }
 }
@@ -166,6 +169,46 @@ func doneToday() -> Int {
 
 func lastExerciseIDs(_ n: Int) -> [String] {
     Array(historyLines().suffix(n).compactMap { $0["exercise"] as? String })
+}
+
+// MARK: - Donation ask
+
+/// The same monobank jar as on potyagus.alinauvarova.com.
+let donateURL = URL(string: "https://send.monobank.ua/jar/7LSbjGstiL")!
+/// Days with at least one finished exercise before the goose asks for the first time.
+let donateAfterDays = 4
+/// How long the goose stays quiet after an answer: «кинути в банку» / «іншим разом».
+let donateQuietDaysAfterOpen = 90.0, donateQuietDaysAfterLater = 7.0
+
+/// The app's own bookkeeping (not user settings — those live in config.json).
+func loadState() -> [String: Any] {
+    ((try? Data(contentsOf: stateURL)).flatMap { try? JSONSerialization.jsonObject(with: $0) } as? [String: Any]) ?? [:]
+}
+
+func saveStateValue(_ key: String, _ value: Any) {
+    var j = loadState()
+    j[key] = value
+    guard let d = try? JSONSerialization.data(withJSONObject: j, options: [.prettyPrinted, .sortedKeys]) else { return }
+    try? d.write(to: stateURL, options: .atomic)
+}
+
+/// Distinct days on which at least one exercise was finished.
+func activeDays() -> Int {
+    let cal = Calendar.current
+    var days = Set<Date>()
+    for row in historyLines() where (row["reason"] as? String) == "done" {
+        if let ts = row["ts"] as? Double { days.insert(cal.startOfDay(for: Date(timeIntervalSince1970: ts))) }
+    }
+    return days.count
+}
+
+/// Number of active days to mention in the ask, or nil when it is not time to ask.
+func donationAskDays(_ cfg: Config) -> Int? {
+    guard cfg.donateAsk else { return nil }
+    let days = activeDays()
+    guard days >= donateAfterDays else { return nil }
+    if let next = loadState()["donateAskAfter"] as? Double, Date().timeIntervalSince1970 < next { return nil }
+    return days
 }
 
 // MARK: - Should we nudge at all?
@@ -760,7 +803,7 @@ final class Controller: NSObject, NSApplicationDelegate, NSMenuDelegate, WKScrip
 
     func webView(_ wv: WKWebView, didFinish nav: WKNavigation!) {
         let cfg = Config.load()
-        let payload: [String: Any] = [
+        var payload: [String: Any] = [
             "taunt":      lib.taunts.randomElement() ?? "Встань і розімнись.",
             "doneLine":   lib.done_lines.randomElement() ?? "Молодець.",
             "name":       current.name,
@@ -773,6 +816,7 @@ final class Controller: NSObject, NSApplicationDelegate, NSMenuDelegate, WKScrip
             "interval":   cfg.intervalMinutes,
             "muted":      wv !== primaryWebView
         ]
+        if let days = donationAskDays(cfg) { payload["donate"] = ["days": days] }
         guard let d = try? JSONSerialization.data(withJSONObject: payload),
               let json = String(data: d, encoding: .utf8) else { return }
         wv.evaluateJavaScript("window.rozimnysInit(\(json))", completionHandler: nil)
@@ -792,7 +836,14 @@ final class Controller: NSObject, NSApplicationDelegate, NSMenuDelegate, WKScrip
             setPaused(until: mins < 0 ? Calendar.current.startOfDay(for: Date()).addingTimeInterval(24 * 3600)
                                       : Date().addingTimeInterval(Double(mins) * 60))
             close(reason: "dnd")
-        case "done", "skip", "ignored": close(reason: action)
+        case "done", "skip", "ignored":
+            // Answer to «кинь гусеві в банку», shown after a finished exercise.
+            if let answer = body["donate"] as? String {
+                let quiet = answer == "open" ? donateQuietDaysAfterOpen : donateQuietDaysAfterLater
+                saveStateValue("donateAskAfter", Date().timeIntervalSince1970 + quiet * 86400)
+                if answer == "open" { NSWorkspace.shared.open(donateURL) }
+            }
+            close(reason: action)
         case "snooze":                  snooze()
         default: break
         }
