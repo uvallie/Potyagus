@@ -15,7 +15,7 @@
     <ApplicationIcon>potyagus.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
-    <Version>0.3.0</Version>
+    <Version>0.4.0</Version>
     <Product>Потягусь</Product>
     <Company>Alina Uvarova</Company>
     <InvariantGlobalization>false</InvariantGlobalization>
