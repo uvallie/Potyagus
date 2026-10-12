@@ -323,7 +323,7 @@ sealed class Agent : ApplicationContext
             ["interval"]   = cfg.IntervalMinutes,
             ["muted"]      = muted,
         };
-        if (Donation.AskDays(cfg) is int days) payload["donate"] = new Dictionary<string, int> { ["days"] = days };
+        if (Donation.AskDays(cfg) is int days) payload["donate"] = new Dictionary<string, object> { ["days"] = days, ["platform"] = "windows" };
         return JsonSerializer.Serialize(payload, Json.Compact);
     }
 
