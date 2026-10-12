@@ -48,7 +48,7 @@ sealed class OverlayForm : Form
         StartPosition = FormStartPosition.Manual;
         ShowInTaskbar = false;
         TopMost = true;
-        BackColor = Color.FromArgb(0x7D, 0xB2, 0x62);   // the lawn, so nothing flashes white
+        BackColor = Color.FromArgb(0x15, 0x7A, 0x44);   // the lawn (--grass), so nothing flashes white
         Bounds = screen.Bounds;
 
         web.Dock = DockStyle.Fill;
