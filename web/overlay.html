@@ -952,9 +952,12 @@ function daysWord(n){
 }
 // Вправу вже зроблено: «done» іде застосунку разом із відповіддю, щоб день зарахувався за будь-якого вибору.
 function askDonation(info){
+  // Windows-версія передає platform:"windows" — там про Apple і App Store не йдеться.
   $("askText").textContent = "Ми разом уже " + daysWord(DATA.donate.days) + ". Я безкоштовний і з відкритим кодом. " +
-    "Зараз збираю на офіційний акаунт розробника Apple: тоді macOS перестане лякати попередженнями, " +
-    "а я зможу потрапити в App Store. Будь-яка сума наближає.";
+    (DATA.donate.platform === "windows"
+      ? "Будь-яка сума допомагає гусю жити далі."
+      : "Зараз збираю на офіційний акаунт розробника Apple: тоді macOS перестане лякати попередженнями, " +
+        "а я зможу потрапити в App Store. Будь-яка сума наближає.");
   $("bye").classList.add("ask", "show");
   let answered = false;
   const answer = how => { if (answered) return; answered = true; send("done", Object.assign({donate: how}, info)); };
@@ -1077,7 +1080,8 @@ window.rozimnysInit = function(payload){
   if (!greeted && !SHOT) { greeted = true; setTimeout(() => honk("hello"), 900); }
 };
 setTimeout(() => { if (document.body.dataset.state === "idle" && !$("steps").children.length) render(); }, 260);
-if (SHOT === "donate") DATA.donate = {days: Number(new URLSearchParams(location.search).get("days")) || 4};
+if (SHOT === "donate") DATA.donate = {days: Number(new URLSearchParams(location.search).get("days")) || 4,
+                                     platform: new URLSearchParams(location.search).get("platform") || undefined};
 if (SHOT === "active" || SHOT === "done" || SHOT === "donate") setTimeout(() => {
   begin(); clearInterval(tick);
   left = 21; $("num").textContent = left; $("prog").style.strokeDashoffset = 2*Math.PI*44 * (left / total);
