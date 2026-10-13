@@ -35,7 +35,7 @@
 
 ### Просто: DMG
 
-Скачай **[Potyagus-0.4.dmg](https://github.com/uvallie/Potyagus/releases/latest)**, перетягни
+Скачай **[Potyagus-0.5.dmg](https://github.com/uvallie/Potyagus/releases/latest)**, перетягни
 `Potyagus.app` у «Програми» і відкрий. Перший раз — правий клік → «Відкрити», бо застосунок
 підписаний без Apple Developer ID. Далі він сам:
 
