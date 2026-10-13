@@ -5,6 +5,11 @@ name: Windows installer
 
 on:
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Додати інсталятор до вже опублікованого релізу (напр. v0.5). Порожньо: лише артефакт.'
+        required: false
+        default: ''
   pull_request:
     paths:
       - 'windows/**'
@@ -38,13 +43,18 @@ jobs:
       - name: Version
         id: ver
         shell: pwsh
+        env:
+          TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
         run: |
-          if ('${{ github.event_name }}' -eq 'release') {
-            $v = '${{ github.event.release.tag_name }}' -replace '^v', ''
+          $tag = $env:TAG.Trim()
+          if ($tag -and $tag -notmatch '^v?\d+(\.\d+){0,3}$') { throw "unexpected tag: $tag" }
+          if ($tag) {
+            $v = $tag -replace '^v', ''
           } else {
             $v = "dev-$('${{ github.sha }}'.Substring(0, 7))"
           }
           "version=$v" >> $env:GITHUB_OUTPUT
+          "tag=$tag" >> $env:GITHUB_OUTPUT
 
       - name: Build installer
         shell: pwsh
@@ -72,8 +82,8 @@ jobs:
           if-no-files-found: error
 
       - name: Attach to release
-        if: github.event_name == 'release'
+        if: steps.ver.outputs.tag != ''
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload '${{ github.event.release.tag_name }}' "dist/windows/Potyagus-${{ steps.ver.outputs.version }}-Setup.exe" --clobber --repo '${{ github.repository }}'
+        run: gh release upload '${{ steps.ver.outputs.tag }}' "dist/windows/Potyagus-${{ steps.ver.outputs.version }}-Setup.exe" --clobber --repo '${{ github.repository }}'
