@@ -62,4 +62,4 @@ goose_bot/
 
 ## License
 
-The code is open source under the [MIT License](../LICENSE). The Potyagus / Goose Up character (its name, look and voice), the goose artwork, logos, animations, video and sounds are © 2026 Alina Uvarova, all rights reserved, and are not covered by the MIT License.
+The code is open source under the [MIT License](../LICENSE). The Potyagus / Goose Up character (its name, look and voice), the goose artwork, logos, animations, video and sounds are © 2026 Alina Uvarova, all rights reserved, and are not covered by the MIT License (see [NOTICE.md](../NOTICE.md)).
