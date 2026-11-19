@@ -120,6 +120,8 @@ struct Library: Decodable {
 /// so a badge, once earned, stays earned as history grows.
 struct Badge: Decodable {
     let id: String, kind: String, n: Int, icon: String, title: String, text: String
+    /// How the shield is drawn in the overlay. Optional so a badge without them still decodes.
+    let color: String?, emblem: String?, ribbon: String?
 }
 
 func loadLibrary() -> Library {
@@ -191,41 +193,76 @@ func doneRows() -> [DoneRow] {
     }
 }
 
-/// Ids of the badges these finished exercises have earned. Same rules as Badges.Earned in windows/src/Store.cs.
-func earnedBadges(_ badges: [Badge], _ rows: [DoneRow]) -> Set<String> {
-    let cal = Calendar.current
-    var perDay: [Date: Int] = [:]
-    for r in rows { perDay[cal.startOfDay(for: r.date), default: 0] += 1 }
-    // longest run of consecutive days with at least one finished exercise
-    var longest = 0, run = 0, prev: Date? = nil
-    for day in perDay.keys.sorted() {
-        if let p = prev, cal.date(byAdding: .day, value: 1, to: p) == day { run += 1 } else { run = 1 }
-        longest = max(longest, run); prev = day
-    }
-    let distinct = Set(rows.compactMap { $0.exercise }).count
-    let earliest = rows.map { cal.component(.hour, from: $0.date) }.min() ?? 99
-    var out = Set<String>()
-    for b in badges {
-        let ok: Bool
-        switch b.kind {
-        case "total":       ok = rows.count >= b.n
-        case "day":         ok = (perDay.values.max() ?? 0) >= b.n
-        case "streak":      ok = longest >= b.n
-        case "distinct":    ok = distinct >= b.n
-        case "before_hour": ok = earliest < b.n
-        default:            ok = false
+/// Everything the badge rules look at. "Ever" values decide what is earned; "now" values show progress.
+/// Same numbers as BadgeStats in windows/src/Store.cs.
+struct BadgeStats {
+    var total = 0, maxDay = 0, today = 0, longest = 0, current = 0, distinct = 0, earliest = 99
+
+    init(_ rows: [DoneRow], now: Date = Date()) {
+        let cal = Calendar.current
+        var perDay: [Date: Int] = [:]
+        for r in rows { perDay[cal.startOfDay(for: r.date), default: 0] += 1 }
+        total = rows.count
+        maxDay = perDay.values.max() ?? 0
+        let todayStart = cal.startOfDay(for: now)
+        today = perDay[todayStart] ?? 0
+        var run = 0, prev: Date? = nil
+        for day in perDay.keys.sorted() {
+            if let p = prev, cal.date(byAdding: .day, value: 1, to: p) == day { run += 1 } else { run = 1 }
+            longest = max(longest, run); prev = day
         }
-        if ok { out.insert(b.id) }
+        // the current streak still counts while today is not over: it ends today or yesterday
+        var day = perDay[todayStart] != nil ? todayStart : cal.date(byAdding: .day, value: -1, to: todayStart)!
+        while perDay[day] != nil { current += 1; day = cal.date(byAdding: .day, value: -1, to: day)! }
+        distinct = Set(rows.compactMap { $0.exercise }).count
+        earliest = rows.map { cal.component(.hour, from: $0.date) }.min() ?? 99
     }
-    return out
+
+    func earned(_ b: Badge) -> Bool {
+        switch b.kind {
+        case "total":       return total >= b.n
+        case "day":         return maxDay >= b.n
+        case "streak":      return longest >= b.n
+        case "distinct":    return distinct >= b.n
+        case "before_hour": return earliest < b.n
+        default:            return false
+        }
+    }
+
+    /// Progress toward a badge right now: (have, need).
+    func progress(_ b: Badge) -> (Int, Int) {
+        switch b.kind {
+        case "total":       return (min(total, b.n), b.n)
+        case "day":         return (min(today, b.n), b.n)
+        case "streak":      return (min(current, b.n), b.n)
+        case "distinct":    return (min(distinct, b.n), b.n)
+        case "before_hour": return (earliest < b.n ? 1 : 0, 1)
+        default:            return (0, max(b.n, 1))
+        }
+    }
 }
 
-/// Badges that finishing `exercise` right now would unlock — shown on the «Готово» screen.
-func badgesUnlockedBy(_ badges: [Badge], exercise: String) -> [Badge] {
+func earnedBadges(_ badges: [Badge], _ rows: [DoneRow]) -> Set<String> {
+    let s = BadgeStats(rows)
+    return Set(badges.filter { s.earned($0) }.map { $0.id })
+}
+
+/// What the overlay draws a shield from.
+func badgeJSON(_ b: Badge, _ s: BadgeStats) -> [String: Any] {
+    let (have, need) = s.progress(b)
+    return ["id": b.id, "title": b.title, "text": b.text, "icon": b.icon,
+            "color": b.color ?? "", "emblem": b.emblem ?? "", "ribbon": b.ribbon ?? "",
+            "earned": s.earned(b), "have": have, "need": need]
+}
+
+/// The shelf (every badge, as of now) and the badges that finishing `exercise` right now would unlock.
+func badgePayload(_ badges: [Badge], exercise: String) -> (shelf: [[String: Any]], unlocks: [[String: Any]]) {
     let rows = doneRows()
-    let before = earnedBadges(badges, rows)
-    let after = earnedBadges(badges, rows + [DoneRow(date: Date(), exercise: exercise)])
-    return badges.filter { after.contains($0.id) && !before.contains($0.id) }
+    let before = BadgeStats(rows)
+    let after = BadgeStats(rows + [DoneRow(date: Date(), exercise: exercise)])
+    let shelf = badges.map { badgeJSON($0, before) }
+    let unlocks = badges.filter { after.earned($0) && !before.earned($0) }.map { badgeJSON($0, after) }
+    return (shelf, unlocks)
 }
 
 // MARK: - Donation ask
@@ -887,9 +924,10 @@ final class Controller: NSObject, NSApplicationDelegate, NSMenuDelegate, WKScrip
             "interval":   cfg.intervalMinutes,
             "muted":      wv !== primaryWebView
         ]
-        let unlocked = badgesUnlockedBy(lib.badges ?? [], exercise: current.id)
-        if !unlocked.isEmpty {
-            payload["badges"] = unlocked.map { ["icon": $0.icon, "title": $0.title, "text": $0.text] }
+        let (shelf, unlocks) = badgePayload(lib.badges ?? [], exercise: current.id)
+        if !shelf.isEmpty { payload["shelf"] = shelf }
+        if !unlocks.isEmpty {
+            payload["badges"] = unlocks
         } else if let days = donationAskDays(cfg) {
             // one thing at a time: on a badge day the goose doesn't ask for money, it asks next time
             payload["donate"] = ["days": days]

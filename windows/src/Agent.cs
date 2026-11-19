@@ -336,9 +336,9 @@ sealed class Agent : ApplicationContext
             ["interval"]   = cfg.IntervalMinutes,
             ["muted"]      = muted,
         };
-        var unlocked = Badges.UnlockedBy(lib.Badges, current.Id);
-        if (unlocked.Count > 0)
-            payload["badges"] = unlocked.Select(b => new Dictionary<string, string> { ["icon"] = b.Icon, ["title"] = b.Title, ["text"] = b.Text }).ToList();
+        var (shelf, unlocks) = Badges.Payload(lib.Badges, current.Id);
+        if (shelf.Count > 0) payload["shelf"] = shelf;
+        if (unlocks.Count > 0) payload["badges"] = unlocks;
         // one thing at a time: on a badge day the goose doesn't ask for money, it asks next time
         else if (Donation.AskDays(cfg) is int days) payload["donate"] = new Dictionary<string, object> { ["days"] = days, ["platform"] = "windows" };
         return JsonSerializer.Serialize(payload, Json.Compact);

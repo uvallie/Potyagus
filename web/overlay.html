@@ -211,20 +211,38 @@
   .ask-card .btn-primary small{font-size:.68em;font-weight:600;letter-spacing:.02em}
   .ask-card .btn-ghost{color:var(--ink);background:#fff;border-color:rgba(30,58,36,.28)}
 
-  /* ---------- досягнення: картка під реплікою гуся, коли вправа щось відкрила ---------- */
-  .bye.badge{grid-auto-flow:row;align-content:center;gap:clamp(16px,2.6vh,26px)}
-  .badges{display:none;flex-direction:column;gap:12px;width:min(92vw,560px)}
-  .bye.badge .badges{display:flex}
-  .badge-card{display:flex;align-items:center;gap:clamp(14px,1.4vw,22px);
-    padding:clamp(16px,2.2vh,24px) clamp(18px,1.8vw,28px);border-radius:24px;background:#FFF6E8;color:var(--ink);
-    box-shadow:0 24px 60px -28px rgba(12,40,24,.55);transform:translateY(18px) scale(.96);opacity:0;
-    transition:transform .55s cubic-bezier(.2,1.3,.4,1),opacity .4s ease}
-  .bye.badge.show .badge-card{transform:none;opacity:1}
-  .badge-icon{flex:none;display:grid;place-items:center;width:clamp(54px,4.4vw,72px);aspect-ratio:1;border-radius:50%;
-    background:var(--grass);font-size:clamp(28px,2.3vw,38px);line-height:1}
-  .badge-kicker{font-size:clamp(11px,.85vw,13px);letter-spacing:.32em;text-transform:uppercase;font-weight:600;color:var(--good)}
-  .badge-title{font-size:clamp(22px,1.9vw,30px);font-weight:800;letter-spacing:-.02em;line-height:1.1;margin-top:3px}
-  .badge-text{font-size:clamp(14px,1.05vw,17px);line-height:1.45;color:var(--ink-dim);margin-top:4px}
+
+  /* ---------- щити-досягнення ---------- */
+  .shield{display:block;width:100%;height:auto;overflow:visible}
+  .shield text{font-family:inherit;font-weight:800;letter-spacing:.02em}
+  .shelf{display:flex;flex-direction:column;gap:clamp(8px,1.2vh,12px);margin-top:clamp(6px,1.4vh,16px)}
+  [data-state="countdown"] .shelf{display:none}
+  .shelf-head{display:flex;justify-content:space-between;align-items:baseline;gap:16px;flex-wrap:wrap;
+    font-size:clamp(11px,.85vw,13px);letter-spacing:.24em;text-transform:uppercase;font-weight:600;color:var(--on-grass)}
+  .shelf-head #shelfNext{letter-spacing:.02em;text-transform:none;font-weight:600;font-size:clamp(13px,1vw,15px);opacity:.9}
+  .shelf-row{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:clamp(4px,.6vw,10px);max-width:760px}
+  .sh{position:relative}
+  .sh.locked .shield{opacity:.85}
+  .sh.next::after{content:"";position:absolute;inset:-5px -3px;border-radius:16px;
+    border:1.5px dashed rgba(255,246,232,.6);pointer-events:none}
+  .sh.fresh .shield{animation:shpop .9s cubic-bezier(.2,1.4,.4,1) both}
+  .sh .shield{filter:drop-shadow(0 6px 10px rgba(10,40,22,.35))}
+  @keyframes shpop{0%{transform:scale(.3) rotate(-14deg);opacity:0}55%{transform:scale(1.18) rotate(4deg);opacity:1}100%{transform:none}}
+
+  /* новий щит після вправи — замість кроків */
+  .newbadge{display:flex;align-items:center;gap:clamp(16px,1.8vw,28px)}
+  .newbadge .big{width:clamp(110px,9.5vw,160px);flex:none;position:relative}
+  .newbadge .big .shield{animation:bigpop 1s cubic-bezier(.2,1.35,.4,1) both;filter:drop-shadow(0 14px 22px rgba(10,40,22,.45))}
+  .newbadge .big::before{content:"";position:absolute;inset:-28%;border-radius:50%;
+    background:repeating-conic-gradient(rgba(255,246,232,.22) 0 9deg,transparent 9deg 24deg);
+    animation:rays 9s linear infinite, fadein .6s ease .3s both;opacity:0;
+    -webkit-mask:radial-gradient(circle,#000 30%,transparent 70%);mask:radial-gradient(circle,#000 30%,transparent 70%)}
+  @keyframes rays{to{transform:rotate(360deg)}}
+  @keyframes bigpop{0%{transform:scale(.2) rotate(-20deg);opacity:0}50%{transform:scale(1.15) rotate(5deg);opacity:1}100%{transform:none}}
+  .newbadge .k{font-size:clamp(11px,.85vw,13px);letter-spacing:.32em;text-transform:uppercase;font-weight:600;color:var(--on-grass);opacity:.85}
+  .newbadge h3{font-size:clamp(26px,2.4vw,40px);font-weight:800;letter-spacing:-.03em;line-height:1.05;color:var(--on-grass);margin:4px 0 6px}
+  .newbadge p{font-size:clamp(15px,1.2vw,20px);line-height:1.4;color:var(--on-grass);opacity:.92;max-width:30ch}
+  .got-badge .steps{display:none}
 
   @media (max-aspect-ratio:1/1),(max-width:900px){
     :root{--horizon:44vh}
@@ -233,6 +251,7 @@
     .goose-slot{width:min(56vw,300px)}
     .brand{font-size:clamp(48px,12vw,84px)}
     .panel{max-width:none}
+    .shelf{display:none}            /* в одну колонку полиця не влазить — лишається великий щит після вправи */
   }
 
   /* ================= CHARACTER POSES ================= */
@@ -714,6 +733,7 @@
         </div>
         <div><div class="exname" id="exname">Дотягнись до стелі</div><div class="exsub" id="exsub">Вправа · 30 секунд</div></div>
       </div>
+      <div class="newbadge" id="newbadge" hidden></div>
       <ol class="steps" id="steps"></ol>
       <div class="actions">
         <button class="btn-primary good" id="btnDone" hidden>Готово ✓</button>
@@ -729,6 +749,12 @@
         </div>
       </div>
     </div>
+
+    <!-- досягнення: щити під кнопками на старті й після вправи -->
+    <div class="shelf" id="shelf" hidden>
+      <div class="shelf-head"><span id="shelfCount">Досягнення</span><span id="shelfNext"></span></div>
+      <div class="shelf-row" id="shelfRow"></div>
+    </div>
   </div>
 </div>
 
@@ -737,7 +763,6 @@
 <div class="confetti" id="confetti"></div>
 <div class="bye" id="bye">
   <p id="byeText"></p>
-  <div class="badges" id="badges"></div>
   <div class="ask-card" id="askCard">
     <div class="ask-kicker">підтримати</div>
     <h2>Кинь гусеві в банку.</h2>
@@ -780,7 +805,7 @@ const VIEW = {
 };
 
 let state = "idle", total = 30, left = 30, tick = null, finished = false, closing = false, startedAt = null;
-/* ?shot=idle|active|done|donate|badge (&n=2) — режим для промо-скрінів: без звуку, без відліку, без автозакриття */
+/* ?shot=idle|active|done|donate|badge — режим для промо-скрінів: без звуку, без відліку, без автозакриття */
 const SHOT = new URLSearchParams(location.search).get("shot");
 /* ?img=<png із зеленим фоном> — стоп-кадр замість відео (headless-браузери відео не грають) */
 let shotImg = null;
@@ -875,6 +900,7 @@ function render(){
     const d = document.createElement("i"); if (i < DATA.todayCount) d.classList.add("on"); $("dots").appendChild(d);
   }
   $("footText").textContent = "Сьогодні розім'явся: " + DATA.todayCount + " / " + goal;
+  renderShelf(false);
 
 
   total = left = DATA.seconds;
@@ -936,7 +962,8 @@ function complete(){
   document.querySelector(".goose.active").classList.add("celebrate");
   honk("done");
   confetti();
-  if (!SHOT) setTimeout(() => { if (!closing) finish("done"); }, 3200);
+  const gotBadge = showNewBadge();
+  if (!SHOT) setTimeout(() => { if (!closing) finish("done"); }, gotBadge ? 7000 : 3200);   // час роздивитись щит
 }
 
 function dndUntil(mins){
@@ -957,27 +984,115 @@ function finish(reason, extra){
   const elapsed = startedAt ? Math.round((Date.now() - startedAt)/1000) : 0;
   const info = Object.assign({elapsed, started: !!startedAt}, extra);
   if (reason === "done" && DATA.donate) { askDonation(info); return; }
-  const badges = reason === "done" ? showBadges() : 0;
   $("bye").classList.add("show");
-  if (!SHOT || !badges) setTimeout(() => send(reason, info), badges ? 3200 + 1300 * badges : 1150);   // час прочитати бейдж
+  setTimeout(() => send(reason, info), 1150);
 }
 
-/* ---------- досягнення: застосунок сам рахує, що відкриє саме ця вправа (DATA.badges) ---------- */
-function showBadges(){
-  const list = Array.isArray(DATA.badges) ? DATA.badges : [];
-  const box = $("badges"); box.textContent = "";
-  for (const b of list){
-    const card = document.createElement("div"); card.className = "badge-card";
-    const icon = document.createElement("div"); icon.className = "badge-icon"; icon.textContent = b.icon || "🏅";
-    const body = document.createElement("div");
-    const k = document.createElement("div"); k.className = "badge-kicker"; k.textContent = "нове досягнення";
-    const t = document.createElement("div"); t.className = "badge-title"; t.textContent = b.title || "";
-    const p = document.createElement("div"); p.className = "badge-text"; p.textContent = b.text || "";
-    body.append(k, t, p); card.append(icon, body); box.append(card);
-  }
-  if (list.length) { $("bye").classList.add("badge"); setTimeout(() => chime([784, 988, 1175], 0.11), 350); }
-  return list.length;
+/* ---------- щити-досягнення: малюємо самі, пласко, як гуся ---------- */
+const CREAM = "#FFF6E8", INK = "#1E3A24";
+function shade(hex, k){            // k<0 темніше, k>0 світліше
+  const n = parseInt(hex.slice(1), 16), c = [n >> 16, n >> 8 & 255, n & 255];
+  return "#" + c.map(v => Math.round(k < 0 ? v * (1 + k) : v + (255 - v) * k).toString(16).padStart(2, "0")).join("");
 }
+function starPath(cx, cy, R, r){
+  let d = "";
+  for (let i = 0; i < 10; i++){
+    const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r : R;
+    d += (i ? "L" : "M") + (cx + rr * Math.cos(a)).toFixed(1) + " " + (cy + rr * Math.sin(a)).toFixed(1);
+  }
+  return d + "Z";
+}
+// емблеми в квадраті ~ 34..86 × 26..78, центр (60,52); колір — кремовий
+const EMBLEMS = {
+  star:     c => `<path d="${starPath(60, 54, 25, 11)}" fill="${CREAM}" stroke="${CREAM}" stroke-width="3" stroke-linejoin="round"/>`,
+  feather:  c => `<path d="M78 28 C 58 30, 44 46, 42 74 C 52 70, 66 60, 74 46 C 66 48, 60 50, 56 52 C 64 46, 72 40, 78 28 Z" fill="${CREAM}"/>
+                  <path d="M42 74 L 38 82" stroke="${CREAM}" stroke-width="4" stroke-linecap="round"/>`,
+  dumbbell: c => `<rect x="34" y="40" width="10" height="28" rx="3" fill="${CREAM}"/><rect x="76" y="40" width="10" height="28" rx="3" fill="${CREAM}"/>
+                  <rect x="27" y="45" width="7" height="18" rx="2.5" fill="${CREAM}"/><rect x="86" y="45" width="7" height="18" rx="2.5" fill="${CREAM}"/>
+                  <rect x="44" y="50" width="32" height="8" rx="2" fill="${CREAM}"/>`,
+  trophy:   c => `<path d="M42 30 H78 V44 C78 56 70 63 60 63 C50 63 42 56 42 44 Z" fill="${CREAM}"/>
+                  <path d="M42 34 H33 C33 46 38 50 44 51 M78 34 H87 C87 46 82 50 76 51" fill="none" stroke="${CREAM}" stroke-width="4" stroke-linecap="round"/>
+                  <rect x="56" y="62" width="8" height="8" fill="${CREAM}"/><rect x="47" y="70" width="26" height="7" rx="2" fill="${CREAM}"/>`,
+  target:   c => `<circle cx="60" cy="53" r="25" fill="${CREAM}"/><circle cx="60" cy="53" r="17" fill="${c}"/>
+                  <circle cx="60" cy="53" r="10" fill="${CREAM}"/><circle cx="60" cy="53" r="4" fill="${c}"/>`,
+  flame:    c => `<path d="M60 26 C 64 38, 80 44, 80 60 C 80 72, 71 80, 60 80 C 49 80, 40 72, 40 60 C 40 50, 46 44, 50 38 C 51 46, 54 50, 58 51 C 56 42, 56 34, 60 26 Z" fill="${CREAM}"/>
+                  <path d="M60 56 C 63 61, 69 63, 69 70 C 69 75, 65 78, 60 78 C 55 78, 51 75, 51 70 C 51 65, 56 62, 60 56 Z" fill="${c}"/>`,
+  calendar: c => `<rect x="36" y="32" width="48" height="44" rx="6" fill="${CREAM}"/><rect x="36" y="32" width="48" height="11" rx="5" fill="${shade(c,-.25)}"/>
+                  <rect x="44" y="26" width="5" height="12" rx="2.5" fill="${CREAM}"/><rect x="71" y="26" width="5" height="12" rx="2.5" fill="${CREAM}"/>
+                  ${[0,1,2,3].map(i => [0,1].map(j => `<rect x="${42+i*10}" y="${49+j*11}" width="7" height="7" rx="1.5" fill="${c}"/>`).join("")).join("")}`,
+  mosaic:   c => `<rect x="35" y="29" width="22" height="22" rx="5" fill="${CREAM}"/><circle cx="74" cy="40" r="11" fill="${CREAM}"/>
+                  <path d="M46 56 L58 77 H34 Z" fill="${CREAM}" stroke="${CREAM}" stroke-width="3" stroke-linejoin="round"/>
+                  <path d="M74 56 l4 8 9 1 -7 6 2 9 -8 -5 -8 5 2 -9 -7 -6 9 -1 z" fill="${CREAM}"/>`,
+  sunrise:  c => `<path d="M38 66 A22 22 0 0 1 82 66 Z" fill="${CREAM}"/>
+                  ${[-60,-30,0,30,60].map(a => { const r = a*Math.PI/180; return `<path d="M${60+28*Math.sin(r)} ${66-28*Math.cos(r)} L${60+36*Math.sin(r)} ${66-36*Math.cos(r)}" stroke="${CREAM}" stroke-width="4.5" stroke-linecap="round"/>`; }).join("")}
+                  <rect x="30" y="70" width="60" height="5" rx="2.5" fill="${CREAM}"/>`,
+  lock:     c => `<path d="M50 50 V42 C50 35 54 31 60 31 C66 31 70 35 70 42 V50" fill="none" stroke="${CREAM}" stroke-width="5"/>
+                  <rect x="44" y="49" width="32" height="25" rx="5" fill="${CREAM}"/><circle cx="60" cy="60" r="3.6" fill="${c}"/>`
+};
+let shieldSeq = 0;
+function shieldSVG(b, locked, small){
+  const base = locked ? "#2F6B47" : (b.color || "#2F5BD3"), dark = locked ? "#245638" : shade(base, -.32);
+  const em = locked ? "lock" : (EMBLEMS[b.emblem] ? b.emblem : "star");    // невідома емблема → зірка
+  const id = "shc" + (++shieldSeq);
+  // на полиці — лише число зі стрічки («100 вправ» → «100»), щоб читалось на маленькому щиті
+  const full = (b.ribbon || "").toUpperCase();
+  const ribbon = small ? (full.split(" ").find(w => /\d/.test(w)) || full) : full;
+  const fs = small ? (ribbon.length > 3 ? 22 : 26) : ribbon.length > 7 ? 11 : ribbon.length > 5 ? 12.5 : 14;
+  return `<svg class="shield" viewBox="-6 0 132 132" aria-hidden="true">
+    <defs><clipPath id="${id}"><path d="M60 14 L100 27 V62 C100 89 81 106 60 116 C39 106 20 89 20 62 V27 Z"/></clipPath></defs>
+    <path d="M60 5 L109 21 V62 C109 95 86 115 60 127 C34 115 11 95 11 62 V21 Z" fill="${dark}" ${locked ? `stroke="${CREAM}" stroke-opacity=".55" stroke-width="2.5"` : ""}/>
+    <path d="M60 14 L100 27 V62 C100 89 81 106 60 116 C39 106 20 89 20 62 V27 Z" fill="${base}"/>
+    <g clip-path="url(#${id})"><path d="M60 14 L20 27 V120 H60 Z" fill="#fff" opacity="${locked ? .04 : .13}"/></g>
+    <g opacity="${locked ? .7 : 1}">${EMBLEMS[em](base)}</g>
+    ${ribbon ? (() => {
+      // стрічка: на полиці вища й з більшою цифрою
+      const y0 = small ? 80 : 84, h = small ? 30 : 21, mid = y0 + h / 2, tail = shade(CREAM, -.14);
+      return `<path d="M-2 ${y0+4} H14 V${y0+h+4} H-2 L5 ${mid+4} Z" fill="${locked ? "#A9BFA9" : tail}"/>
+      <path d="M122 ${y0+4} H106 V${y0+h+4} H122 L115 ${mid+4} Z" fill="${locked ? "#A9BFA9" : tail}"/>
+      <rect x="6" y="${y0}" width="108" height="${h}" rx="3" fill="${locked ? "#C7D6C5" : CREAM}"/>
+      <text x="60" y="${mid + fs * .35}" text-anchor="middle" font-size="${fs}" fill="${INK}">${ribbon}</text>`; })() : ""}
+  </svg>`;
+}
+
+/* полиця: усі щити; відкриті кольорові, закриті з замком; пунктиром — найближчий */
+function renderShelf(fresh){
+  const list = Array.isArray(DATA.shelf) ? DATA.shelf : [];
+  $("shelf").hidden = !list.length;
+  if (!list.length) return;
+  const unlocking = new Set((DATA.badges || []).map(b => b.id));
+  const isOn = b => b.earned || (fresh && unlocking.has(b.id));
+  const got = list.filter(isOn).length;
+  $("shelfCount").textContent = "Досягнення · " + got + " / " + list.length;
+  // найближчий закритий: найбільша частка have/need
+  const next = list.filter(b => !isOn(b) && b.need).sort((a, b) => (b.have / b.need) - (a.have / a.need))[0];
+  $("shelfNext").textContent = next ? "Наступний: «" + next.title + "» · " + next.have + " / " + next.need : "Усе зібрано. Гуси аплодують.";
+  $("shelfRow").innerHTML = "";
+  for (const b of list){
+    const on = isOn(b);
+    const el = document.createElement("div");
+    el.className = "sh" + (on ? "" : " locked") + (b === next ? " next" : "") + (fresh && unlocking.has(b.id) ? " fresh" : "");
+    el.title = b.title + " — " + b.text;
+    el.innerHTML = shieldSVG(b, !on, true);
+    $("shelfRow").append(el);
+  }
+}
+
+/* великий щит на кінцевому екрані вправи — замість кроків */
+function showNewBadge(){
+  const list = Array.isArray(DATA.badges) ? DATA.badges : [];
+  if (!list.length) return false;
+  const b = list[0], box = $("newbadge");
+  box.innerHTML = `<div class="big">${shieldSVG(b, false)}</div>
+    <div><div class="k">${list.length > 1 ? "нові досягнення · " + list.length : "нове досягнення"}</div><h3></h3><p></p></div>`;
+  box.querySelector("h3").textContent = list.map(x => x.title).join(" + ");
+  box.querySelector("p").textContent = b.text;
+  box.hidden = false;
+  document.querySelector(".only-active").classList.add("got-badge");
+  renderShelf(true);
+  setTimeout(() => chime([784, 988, 1175, 1568], 0.1), 250);
+  return true;
+}
+
 
 /* ---------- «кинь гусеві в банку» ---------- */
 function daysWord(n){
@@ -1116,15 +1231,26 @@ window.rozimnysInit = function(payload){
 setTimeout(() => { if (document.body.dataset.state === "idle" && !$("steps").children.length) render(); }, 260);
 if (SHOT === "donate") DATA.donate = {days: Number(new URLSearchParams(location.search).get("days")) || 4,
                                      platform: new URLSearchParams(location.search).get("platform") || undefined};
-if (SHOT === "badge") DATA.badges = [
-  {icon: "🔥", title: "Три дні поспіль", text: "Три дні без прогулів. Це вже звичка, а не випадковість."},
-  {icon: "🔟", title: "Десятка", text: "Десять разів встав. Крісло почало нервувати."}
-].slice(0, Number(new URLSearchParams(location.search).get("n")) || 1);
+/* щити для скрінів і перегляду без застосунку (?shot=…): полиця з п'ятьма відкритими; ?shot=badge — щит відкривається після вправи */
+if (!native && SHOT) {
+  const B = (id, title, text, color, emblem, ribbon, earned, have, need) => ({id, title, text, color, emblem, ribbon, earned, have, need});
+  DATA.shelf = [
+    B("first", "Перше перо", "Перша вправа. Я записав, тепер не відкрутишся.", "#178A86", "feather", "1 вправа", true, 1, 1),
+    B("total-10", "Десятка", "Десять разів встав. Крісло почало нервувати.", "#2F5BD3", "dumbbell", "10 вправ", true, 10, 10),
+    B("streak-3", "Три дні поспіль", "Три дні без прогулів. Це вже звичка, а не випадковість.", "#D6453D", "flame", "3 дні", SHOT !== "badge", 3, 3),
+    B("early", "Ранній гусак", "Розім'явся до дев'ятої. Навіть я ще позіхав.", "#8A6AD8", "sunrise", "до 9:00", false, 0, 1),
+    B("day-8", "Норма дня", "Вісім виходів за день. Сьогодні ти точно не меблі.", "#C63B70", "target", "8 за день", true, 8, 8),
+    B("streak-7", "Тиждень на ногах", "Сім днів поспіль. Гуси на лужку тобою пишаються.", "#A3283F", "calendar", "7 днів", false, 1, 7),
+    B("variety", "Різнобій", "Десять різних вправ. Ти скуштував половину меню.", "#2E8FD6", "mosaic", "10 різних", true, 10, 10),
+    B("total-100", "Сотня", "Сто вправ. Твій хребет хоче потиснути тобі руку.", "#5B3FB0", "trophy", "100 вправ", false, 64, 100)
+  ];
+  if (SHOT === "badge") { DATA.shelf[2].have = 2; DATA.badges = [DATA.shelf[2]]; }
+}
 if (SHOT === "active" || SHOT === "done" || SHOT === "donate" || SHOT === "badge") setTimeout(() => {
   begin(); clearInterval(tick);
   left = 21; $("num").textContent = left; $("prog").style.strokeDashoffset = 2*Math.PI*44 * (left / total);
   if (SHOT === "done" || SHOT === "donate" || SHOT === "badge") setTimeout(complete, 400);
-  if (SHOT === "donate" || SHOT === "badge") setTimeout(() => finish("done"), 1200);
+  if (SHOT === "donate") setTimeout(() => finish("done"), 1200);
 }, 600);
 </script>
 </body>

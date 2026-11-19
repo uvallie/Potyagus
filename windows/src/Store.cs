@@ -234,6 +234,58 @@ sealed class Badge
     [JsonPropertyName("icon")]  public string Icon { get; set; } = "";
     [JsonPropertyName("title")] public string Title { get; set; } = "";
     [JsonPropertyName("text")]  public string Text { get; set; } = "";
+    /// How the shield is drawn in the overlay. Optional so a badge without them still loads.
+    [JsonPropertyName("color")]  public string? Color { get; set; }
+    [JsonPropertyName("emblem")] public string? Emblem { get; set; }
+    [JsonPropertyName("ribbon")] public string? Ribbon { get; set; }
+}
+
+/// Everything the badge rules look at. "Ever" values decide what is earned; "now" values show progress.
+/// Same numbers as BadgeStats in src/main.swift.
+sealed class BadgeStats
+{
+    public int Total, MaxDay, Today, Longest, Current, Distinct, Earliest = 99;
+
+    public BadgeStats(List<Badges.DoneRow> rows, DateTime? now = null)
+    {
+        var today = (now ?? DateTime.Now).Date;
+        var perDay = rows.GroupBy(r => r.When.Date).ToDictionary(g => g.Key, g => g.Count());
+        Total = rows.Count;
+        MaxDay = perDay.Count > 0 ? perDay.Values.Max() : 0;
+        Today = perDay.TryGetValue(today, out var t) ? t : 0;
+        int run = 0; DateTime? prev = null;
+        foreach (var day in perDay.Keys.OrderBy(d => d))
+        {
+            run = prev is DateTime p && p.AddDays(1) == day ? run + 1 : 1;
+            Longest = Math.Max(Longest, run); prev = day;
+        }
+        // the current streak still counts while today is not over: it ends today or yesterday
+        var d = perDay.ContainsKey(today) ? today : today.AddDays(-1);
+        while (perDay.ContainsKey(d)) { Current++; d = d.AddDays(-1); }
+        Distinct = rows.Select(r => r.Exercise).Where(e => e != null).Distinct().Count();
+        Earliest = rows.Count > 0 ? rows.Min(r => r.When.Hour) : 99;
+    }
+
+    public bool Earned(Badge b) => b.Kind switch
+    {
+        "total"       => Total >= b.N,
+        "day"         => MaxDay >= b.N,
+        "streak"      => Longest >= b.N,
+        "distinct"    => Distinct >= b.N,
+        "before_hour" => Earliest < b.N,
+        _             => false,
+    };
+
+    /// Progress toward a badge right now: (have, need).
+    public (int Have, int Need) Progress(Badge b) => b.Kind switch
+    {
+        "total"       => (Math.Min(Total, b.N), b.N),
+        "day"         => (Math.Min(Today, b.N), b.N),
+        "streak"      => (Math.Min(Current, b.N), b.N),
+        "distinct"    => (Math.Min(Distinct, b.N), b.N),
+        "before_hour" => (Earliest < b.N ? 1 : 0, 1),
+        _             => (0, Math.Max(b.N, 1)),
+    };
 }
 
 static class Badges
@@ -250,43 +302,32 @@ static class Badges
                          : null)
             .Where(d => d != null).Select(d => d!).ToList();
 
-    /// Ids of the badges these finished exercises have earned. Same rules as earnedBadges in src/main.swift.
     public static HashSet<string> Earned(List<Badge> badges, List<DoneRow> rows)
     {
-        var perDay = rows.GroupBy(r => r.When.Date).ToDictionary(g => g.Key, g => g.Count());
-        int longest = 0, run = 0; DateTime? prev = null;
-        foreach (var day in perDay.Keys.OrderBy(d => d))
-        {
-            run = prev is DateTime p && p.AddDays(1) == day ? run + 1 : 1;
-            longest = Math.Max(longest, run); prev = day;
-        }
-        var distinct = rows.Select(r => r.Exercise).Where(e => e != null).Distinct().Count();
-        var earliest = rows.Count > 0 ? rows.Min(r => r.When.Hour) : 99;
-        var maxDay = perDay.Count > 0 ? perDay.Values.Max() : 0;
-        var out_ = new HashSet<string>();
-        foreach (var b in badges)
-        {
-            var ok = b.Kind switch
-            {
-                "total"       => rows.Count >= b.N,
-                "day"         => maxDay >= b.N,
-                "streak"      => longest >= b.N,
-                "distinct"    => distinct >= b.N,
-                "before_hour" => earliest < b.N,
-                _             => false,
-            };
-            if (ok) out_.Add(b.Id);
-        }
-        return out_;
+        var s = new BadgeStats(rows);
+        return badges.Where(s.Earned).Select(b => b.Id).ToHashSet();
     }
 
-    /// Badges that finishing `exercise` right now would unlock — shown on the «Готово» screen.
-    public static List<Badge> UnlockedBy(List<Badge> badges, string exercise)
+    /// What the overlay draws a shield from.
+    static Dictionary<string, object?> ToJson(Badge b, BadgeStats s)
+    {
+        var (have, need) = s.Progress(b);
+        return new()
+        {
+            ["id"] = b.Id, ["title"] = b.Title, ["text"] = b.Text, ["icon"] = b.Icon,
+            ["color"] = b.Color ?? "", ["emblem"] = b.Emblem ?? "", ["ribbon"] = b.Ribbon ?? "",
+            ["earned"] = s.Earned(b), ["have"] = have, ["need"] = need,
+        };
+    }
+
+    /// The shelf (every badge, as of now) and the badges that finishing `exercise` right now would unlock.
+    public static (List<Dictionary<string, object?>> Shelf, List<Dictionary<string, object?>> Unlocks) Payload(List<Badge> badges, string exercise)
     {
         var rows = DoneRows();
-        var before = Earned(badges, rows);
-        var after = Earned(badges, rows.Append(new DoneRow(DateTime.Now, exercise)).ToList());
-        return badges.Where(b => after.Contains(b.Id) && !before.Contains(b.Id)).ToList();
+        var before = new BadgeStats(rows);
+        var after = new BadgeStats(rows.Append(new DoneRow(DateTime.Now, exercise)).ToList());
+        return (badges.Select(b => ToJson(b, before)).ToList(),
+                badges.Where(b => after.Earned(b) && !before.Earned(b)).Select(b => ToJson(b, after)).ToList());
     }
 }
 
