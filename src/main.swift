@@ -112,6 +112,14 @@ func catalogGroups(_ lib: Library) -> [(title: String, items: [Exercise])] {
 }
 struct Library: Decodable {
     let exercises: [Exercise], taunts: [String], done_lines: [String]
+    /// Optional so older or custom exercises.json files keep working.
+    let badges: [Badge]?
+}
+
+/// An achievement. `kind` + `n` is the rule; every rule is "has it ever happened",
+/// so a badge, once earned, stays earned as history grows.
+struct Badge: Decodable {
+    let id: String, kind: String, n: Int, icon: String, title: String, text: String
 }
 
 func loadLibrary() -> Library {
@@ -169,6 +177,55 @@ func doneToday() -> Int {
 
 func lastExerciseIDs(_ n: Int) -> [String] {
     Array(historyLines().suffix(n).compactMap { $0["exercise"] as? String })
+}
+
+// MARK: - Badges
+
+/// A finished exercise, as far as badges care.
+struct DoneRow { let date: Date; let exercise: String? }
+
+func doneRows() -> [DoneRow] {
+    historyLines().compactMap { row in
+        guard (row["reason"] as? String) == "done", let ts = row["ts"] as? Double else { return nil }
+        return DoneRow(date: Date(timeIntervalSince1970: ts), exercise: row["exercise"] as? String)
+    }
+}
+
+/// Ids of the badges these finished exercises have earned. Same rules as Badges.Earned in windows/src/Store.cs.
+func earnedBadges(_ badges: [Badge], _ rows: [DoneRow]) -> Set<String> {
+    let cal = Calendar.current
+    var perDay: [Date: Int] = [:]
+    for r in rows { perDay[cal.startOfDay(for: r.date), default: 0] += 1 }
+    // longest run of consecutive days with at least one finished exercise
+    var longest = 0, run = 0, prev: Date? = nil
+    for day in perDay.keys.sorted() {
+        if let p = prev, cal.date(byAdding: .day, value: 1, to: p) == day { run += 1 } else { run = 1 }
+        longest = max(longest, run); prev = day
+    }
+    let distinct = Set(rows.compactMap { $0.exercise }).count
+    let earliest = rows.map { cal.component(.hour, from: $0.date) }.min() ?? 99
+    var out = Set<String>()
+    for b in badges {
+        let ok: Bool
+        switch b.kind {
+        case "total":       ok = rows.count >= b.n
+        case "day":         ok = (perDay.values.max() ?? 0) >= b.n
+        case "streak":      ok = longest >= b.n
+        case "distinct":    ok = distinct >= b.n
+        case "before_hour": ok = earliest < b.n
+        default:            ok = false
+        }
+        if ok { out.insert(b.id) }
+    }
+    return out
+}
+
+/// Badges that finishing `exercise` right now would unlock — shown on the «Готово» screen.
+func badgesUnlockedBy(_ badges: [Badge], exercise: String) -> [Badge] {
+    let rows = doneRows()
+    let before = earnedBadges(badges, rows)
+    let after = earnedBadges(badges, rows + [DoneRow(date: Date(), exercise: exercise)])
+    return badges.filter { after.contains($0.id) && !before.contains($0.id) }
 }
 
 // MARK: - Donation ask
@@ -600,6 +657,20 @@ final class Controller: NSObject, NSApplicationDelegate, NSMenuDelegate, WKScrip
         }
         catalog.submenu = cm; menu.addItem(catalog)
 
+        if let badges = lib.badges, !badges.isEmpty {
+            let earned = earnedBadges(badges, doneRows())
+            let got = badges.filter { earned.contains($0.id) }.count
+            let ach = NSMenuItem(title: "Досягнення · \(got) / \(badges.count)", action: nil, keyEquivalent: "")
+            let am = NSMenu(); am.autoenablesItems = false
+            for b in badges {
+                let has = earned.contains(b.id)
+                let it = NSMenuItem(title: has ? "\(b.icon)  \(b.title)" : "🔒  \(b.title)", action: nil, keyEquivalent: "")
+                it.isEnabled = has; it.state = has ? .on : .off; it.toolTip = b.text
+                am.addItem(it)
+            }
+            ach.submenu = am; menu.addItem(ach)
+        }
+
         let freq = NSMenuItem(title: "Частота", action: nil, keyEquivalent: "")
         let fm = NSMenu()
         for (title, mins) in [("Кожні 30 хвилин", 30), ("Щогодини", 60), ("Кожні 90 хвилин", 90)] {
@@ -816,7 +887,13 @@ final class Controller: NSObject, NSApplicationDelegate, NSMenuDelegate, WKScrip
             "interval":   cfg.intervalMinutes,
             "muted":      wv !== primaryWebView
         ]
-        if let days = donationAskDays(cfg) { payload["donate"] = ["days": days] }
+        let unlocked = badgesUnlockedBy(lib.badges ?? [], exercise: current.id)
+        if !unlocked.isEmpty {
+            payload["badges"] = unlocked.map { ["icon": $0.icon, "title": $0.title, "text": $0.text] }
+        } else if let days = donationAskDays(cfg) {
+            // one thing at a time: on a badge day the goose doesn't ask for money, it asks next time
+            payload["donate"] = ["days": days]
+        }
         guard let d = try? JSONSerialization.data(withJSONObject: payload),
               let json = String(data: d, encoding: .utf8) else { return }
         wv.evaluateJavaScript("window.rozimnysInit(\(json))", completionHandler: nil)

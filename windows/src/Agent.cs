@@ -157,6 +157,19 @@ sealed class Agent : ApplicationContext
         }
         menu.Items.Add(catalog);
 
+        if (lib.Badges.Count > 0)
+        {
+            var earned = Badges.Earned(lib.Badges, Badges.DoneRows());
+            var ach = new ToolStripMenuItem($"Досягнення · {lib.Badges.Count(b => earned.Contains(b.Id))} / {lib.Badges.Count}");
+            foreach (var b in lib.Badges)
+            {
+                var has = earned.Contains(b.Id);
+                ach.DropDownItems.Add(new ToolStripMenuItem(has ? $"{b.Icon}  {b.Title}" : $"🔒  {b.Title}")
+                    { Enabled = has, Checked = has, ToolTipText = b.Text });
+            }
+            menu.Items.Add(ach);
+        }
+
         var freq = new ToolStripMenuItem("Частота");
         foreach (var (title, mins) in new[] { ("Кожні 30 хвилин", 30), ("Щогодини", 60), ("Кожні 90 хвилин", 90) })
         {
@@ -323,7 +336,11 @@ sealed class Agent : ApplicationContext
             ["interval"]   = cfg.IntervalMinutes,
             ["muted"]      = muted,
         };
-        if (Donation.AskDays(cfg) is int days) payload["donate"] = new Dictionary<string, object> { ["days"] = days, ["platform"] = "windows" };
+        var unlocked = Badges.UnlockedBy(lib.Badges, current.Id);
+        if (unlocked.Count > 0)
+            payload["badges"] = unlocked.Select(b => new Dictionary<string, string> { ["icon"] = b.Icon, ["title"] = b.Title, ["text"] = b.Text }).ToList();
+        // one thing at a time: on a badge day the goose doesn't ask for money, it asks next time
+        else if (Donation.AskDays(cfg) is int days) payload["donate"] = new Dictionary<string, object> { ["days"] = days, ["platform"] = "windows" };
         return JsonSerializer.Serialize(payload, Json.Compact);
     }
 

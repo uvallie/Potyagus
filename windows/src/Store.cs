@@ -162,6 +162,8 @@ sealed class Library
     [JsonPropertyName("exercises")]  public List<Exercise> Exercises { get; set; } = new();
     [JsonPropertyName("taunts")]     public List<string> Taunts { get; set; } = new();
     [JsonPropertyName("done_lines")] public List<string> DoneLines { get; set; } = new();
+    /// Optional so older or custom exercises.json files keep working.
+    [JsonPropertyName("badges")]     public List<Badge> Badges { get; set; } = new();
 
     public static Library Load()
     {
@@ -218,6 +220,74 @@ static class History
                : Lines().TakeLast(n)
                         .Select(r => r["exercise"] is JsonValue v && v.TryGetValue<string>(out var s) ? s : null)
                         .Where(s => s != null).Select(s => s!).ToList();
+}
+
+// MARK: - Badges
+
+/// An achievement. Kind + N is the rule; every rule is "has it ever happened",
+/// so a badge, once earned, stays earned as history grows.
+sealed class Badge
+{
+    [JsonPropertyName("id")]    public string Id { get; set; } = "";
+    [JsonPropertyName("kind")]  public string Kind { get; set; } = "";
+    [JsonPropertyName("n")]     public int N { get; set; }
+    [JsonPropertyName("icon")]  public string Icon { get; set; } = "";
+    [JsonPropertyName("title")] public string Title { get; set; } = "";
+    [JsonPropertyName("text")]  public string Text { get; set; } = "";
+}
+
+static class Badges
+{
+    /// A finished exercise, as far as badges care: local time and exercise id.
+    public record DoneRow(DateTime When, string? Exercise);
+
+    public static List<DoneRow> DoneRows() =>
+        History.Lines()
+            .Where(r => r["reason"] is JsonValue rv && rv.TryGetValue<string>(out var reason) && reason == "done")
+            .Select(r => r["ts"] is JsonValue ts && ts.TryGetValue<double>(out var t)
+                         ? new DoneRow(DateTimeOffset.FromUnixTimeMilliseconds((long)(t * 1000)).LocalDateTime,
+                                       r["exercise"] is JsonValue ev && ev.TryGetValue<string>(out var ex) ? ex : null)
+                         : null)
+            .Where(d => d != null).Select(d => d!).ToList();
+
+    /// Ids of the badges these finished exercises have earned. Same rules as earnedBadges in src/main.swift.
+    public static HashSet<string> Earned(List<Badge> badges, List<DoneRow> rows)
+    {
+        var perDay = rows.GroupBy(r => r.When.Date).ToDictionary(g => g.Key, g => g.Count());
+        int longest = 0, run = 0; DateTime? prev = null;
+        foreach (var day in perDay.Keys.OrderBy(d => d))
+        {
+            run = prev is DateTime p && p.AddDays(1) == day ? run + 1 : 1;
+            longest = Math.Max(longest, run); prev = day;
+        }
+        var distinct = rows.Select(r => r.Exercise).Where(e => e != null).Distinct().Count();
+        var earliest = rows.Count > 0 ? rows.Min(r => r.When.Hour) : 99;
+        var maxDay = perDay.Count > 0 ? perDay.Values.Max() : 0;
+        var out_ = new HashSet<string>();
+        foreach (var b in badges)
+        {
+            var ok = b.Kind switch
+            {
+                "total"       => rows.Count >= b.N,
+                "day"         => maxDay >= b.N,
+                "streak"      => longest >= b.N,
+                "distinct"    => distinct >= b.N,
+                "before_hour" => earliest < b.N,
+                _             => false,
+            };
+            if (ok) out_.Add(b.Id);
+        }
+        return out_;
+    }
+
+    /// Badges that finishing `exercise` right now would unlock — shown on the «Готово» screen.
+    public static List<Badge> UnlockedBy(List<Badge> badges, string exercise)
+    {
+        var rows = DoneRows();
+        var before = Earned(badges, rows);
+        var after = Earned(badges, rows.Append(new DoneRow(DateTime.Now, exercise)).ToList());
+        return badges.Where(b => after.Contains(b.Id) && !before.Contains(b.Id)).ToList();
+    }
 }
 
 // MARK: - Donation ask
