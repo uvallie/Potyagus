@@ -30,10 +30,10 @@ public static class Input {
 New-Item -ItemType Directory -Force $Out | Out-Null
 $data = Join-Path $env:APPDATA "Potyagus"
 Remove-Item -Recurse -Force $data -ErrorAction SilentlyContinue
-# Four earlier days with a finished exercise, so after this one the goose asks for a donation.
+# Two earlier days in a row with a finished exercise, so this one unlocks the «Три дні поспіль» shield.
 New-Item -ItemType Directory -Force $data | Out-Null
 $now = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
-1..4 | ForEach-Object { "{""ts"":$($now - $_ * 86400),""reason"":""done"",""exercise"":""seed""}" } |
+1..2 | ForEach-Object { "{""ts"":$($now - $_ * 86400),""reason"":""done"",""exercise"":""seed""}" } |
     Set-Content (Join-Path $data "history.jsonl") -Encoding utf8
 
 function Shot([string]$name) {
@@ -68,13 +68,13 @@ Shot "3-exercise"
 Start-Sleep -Seconds 12
 Shot "4-exercise-later"
 
-# The longest exercise is about a minute; then the donation ask, which answers «Іншим разом» by
-# itself after 60 s. A shot every 10 s; the last one before exit shows the ask.
+# The longest exercise is about a minute; then the new shield stays up for 7 s and the goose says goodbye.
+# A shot every 5 s, so one of them catches the shield.
 $deadline = (Get-Date).AddSeconds(180)
 $i = 0
 while (-not $p.HasExited -and (Get-Date) -lt $deadline) {
     Start-Sleep -Seconds 1
-    if ((++$i % 10) -eq 0 -and -not $p.HasExited) { Shot "5-donate-ask" }
+    if ((++$i % 5) -eq 0 -and -not $p.HasExited) { Shot "5-badge-$i" }
 }
 Shot "6-after"
 
@@ -86,16 +86,11 @@ $log = Join-Path $data "agent.log"
 if (Test-Path $log) { Get-Content $log | Write-Host }
 
 if (-not $p.HasExited) { Stop-Process $p -Force; throw "the overlay was still up after the exercise should have ended" }
-# The four seeded lines are "done" too, so look at the one this run appended.
+# The seeded lines are "done" too, so look at the one this run appended.
 if (-not (Test-Path $history) -or (Get-Content $history | Select-Object -Last 1) -notmatch '"reason":"done"') {
     throw "this run did not log 'done' in history.jsonl"
 }
-$state = Join-Path $data "state.json"
-if (-not (Test-Path $state) -or -not (Select-String -Path $state -Pattern 'donateAskAfter' -Quiet)) {
-    throw "the donation ask was not answered (no donateAskAfter in state.json)"
-}
-Write-Host "--- state.json"; Get-Content $state | Write-Host
-Write-Host "✓ the goose showed up, ran an exercise, asked for a donation, logged done and closed"
+Write-Host "✓ the goose showed up, ran an exercise, logged done and closed"
 
 # Resident mode: autostart entry, and a second launch leaves the first one alone.
 $agent = Start-Process $Exe -PassThru
