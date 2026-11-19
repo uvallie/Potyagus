@@ -563,7 +563,7 @@ final class Controller: NSObject, NSApplicationDelegate, NSMenuDelegate, WKScrip
         let cfg = Config.load()
         let f = DateFormatter(); f.dateFormat = "HH:mm"
 
-        let head = NSMenuItem(title: "Сьогодні розім'ялась: \(doneToday()) / \(cfg.goal)", action: nil, keyEquivalent: "")
+        let head = NSMenuItem(title: "Сьогодні розім'явся: \(doneToday()) / \(cfg.goal)", action: nil, keyEquivalent: "")
         head.isEnabled = false; menu.addItem(head)
         let when: String
         if let until = pausedUntil() { when = "На паузі до \(f.string(from: until))" }

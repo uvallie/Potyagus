@@ -858,7 +858,7 @@ function render(){
   for (let i = 0; i < goal; i++){
     const d = document.createElement("i"); if (i < DATA.todayCount) d.classList.add("on"); $("dots").appendChild(d);
   }
-  $("footText").textContent = "Сьогодні розім'ялась: " + DATA.todayCount + " / " + goal;
+  $("footText").textContent = "Сьогодні розім'явся: " + DATA.todayCount + " / " + goal;
 
 
   total = left = DATA.seconds;

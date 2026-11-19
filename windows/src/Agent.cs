@@ -125,7 +125,7 @@ sealed class Agent : ApplicationContext
         menu.Items.Clear();
         var cfg = Config.Load();
 
-        menu.Items.Add(Disabled($"Сьогодні розім'ялась: {History.DoneToday()} / {cfg.Goal}"));
+        menu.Items.Add(Disabled($"Сьогодні розім'явся: {History.DoneToday()} / {cfg.Goal}"));
         menu.Items.Add(Disabled(Pause.Until() is DateTime until
             ? $"На паузі до {until:HH\\:mm}" : $"Наступний вихід о {nextAt:HH\\:mm}"));
         menu.Items.Add(new ToolStripSeparator());

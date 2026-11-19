@@ -135,7 +135,7 @@ done = [r for r in rows if r.get("reason")=="done"]
 today = datetime.date.today()
 
 by_day = collections.Counter(day(r) for r in done)
-print(f"Сьогодні розім'ялась:  {by_day.get(today,0)}")
+print(f"Сьогодні розім'явся:  {by_day.get(today,0)}")
 print(f"Усього:                {len(done)}")
 
 # streak of consecutive days with at least one stretch
