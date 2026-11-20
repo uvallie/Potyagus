@@ -335,6 +335,7 @@ sealed class Agent : ApplicationContext
             ["volume"]     = cfg.Volume / 100.0,
             ["interval"]   = cfg.IntervalMinutes,
             ["muted"]      = muted,
+            ["badgesHidden"] = !cfg.ShowBadges,
         };
         var (shelf, unlocks) = Badges.Payload(lib.Badges, current.Id);
         if (shelf.Count > 0) payload["shelf"] = shelf;
@@ -359,6 +360,13 @@ sealed class Agent : ApplicationContext
     void OnMessage(OverlayForm _, JsonObject body)
     {
         if (body["action"] is not JsonValue av || !av.TryGetValue<string>(out var action)) return;
+        // Settings from the page don't end the nudge — handle them before the one-shot guard.
+        if (action == "badges")
+        {
+            var hidden = body["hidden"] is JsonValue hv && hv.TryGetValue<bool>(out var h) && h;
+            Config.Save("showBadges", JsonValue.Create(!hidden));
+            return;
+        }
         if (handled) return;
         handled = true;
         switch (action)

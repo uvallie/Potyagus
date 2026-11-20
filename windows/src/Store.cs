@@ -85,6 +85,8 @@ sealed class Config
     public int Volume = 100;
     public bool ShowMenuBarIcon = true;
     public List<string> DisabledExercises = new();
+    /// Badge shelf on the overlay. «Сховати» flips it off; new badges then don't pop up either.
+    public bool ShowBadges = true;
 
     public static Config Load()
     {
@@ -107,6 +109,7 @@ sealed class Config
         if (Int(j, "volume") is int v) c.Volume = Math.Clamp(v, 0, 100);
         if (Bool(j, "showMenuBarIcon") is bool si) c.ShowMenuBarIcon = si;
         if (Strings(j, "disabledExercises") is { } de) c.DisabledExercises = de;
+        if (Bool(j, "showBadges") is bool sb) c.ShowBadges = sb;
         return c;
     }
 

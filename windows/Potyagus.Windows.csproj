@@ -15,7 +15,7 @@
     <ApplicationIcon>potyagus.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
-    <Version>0.7.0</Version>
+    <Version>0.7.1</Version>
     <Product>Потягусь</Product>
     <Company>Alina Uvarova</Company>
     <InvariantGlobalization>false</InvariantGlobalization>
@@ -30,6 +30,7 @@
   <ItemGroup>
     <Content Include="..\web\overlay.html" Link="web\overlay.html" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
     <Content Include="..\web\clips\*.mp4" Link="web\clips\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
+    <Content Include="..\web\badges\*.png" Link="web\badges\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
     <Content Include="..\web\sfx\*.m4a" Link="web\sfx\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
     <Content Include="..\data\exercises.json" Link="exercises.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
   </ItemGroup>

@@ -27,7 +27,7 @@ jobs:
         run: |
           $exe = "windows/dist/Potyagus/Potyagus.exe"
           if (-not (Test-Path $exe)) { throw "no exe" }
-          foreach ($f in "web/overlay.html", "web/clips/idle.mp4", "web/sfx/honk.m4a", "exercises.json") {
+          foreach ($f in "web/overlay.html", "web/clips/idle.mp4", "web/sfx/honk.m4a", "web/badges/first.png", "exercises.json") {
             if (-not (Test-Path "windows/dist/Potyagus/$f")) { throw "missing $f" }
           }
           $p = Start-Process $exe -ArgumentList "--check" -Wait -PassThru

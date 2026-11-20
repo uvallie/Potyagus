@@ -204,6 +204,35 @@
   [data-state="countdown"] .shelf{display:none}
   .shelf-head{display:flex;justify-content:space-between;align-items:baseline;gap:16px;flex-wrap:wrap;
     font-size:clamp(11px,.85vw,13px);letter-spacing:.24em;text-transform:uppercase;font-weight:600;color:var(--on-grass)}
+  .shelf-right{display:flex;align-items:baseline;gap:14px}
+  .mini{font:inherit;font-size:clamp(12px,.9vw,14px);font-weight:600;letter-spacing:.01em;text-transform:none;cursor:pointer;
+    padding:5px 12px;border-radius:999px;border:1px solid rgba(255,246,232,.45);background:transparent;color:var(--on-grass)}
+  .mini:hover{background:rgba(255,246,232,.14)}
+  .mini.cream{background:var(--on-grass);color:var(--good);border-color:transparent;font-size:clamp(14px,1.05vw,17px);padding:8px 18px;
+    box-shadow:0 10px 24px -12px rgba(10,40,22,.6)}
+  .mini.cream:hover{background:#fff}
+  .nb-actions{display:flex;gap:10px;margin-top:12px}
+  .foot-link{font:inherit;background:none;border:0;padding:0;margin-left:10px;color:#EAF3E1;opacity:.75;cursor:pointer;
+    text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(234,243,225,.4)}
+  .foot-link:hover{opacity:1}
+  .badges-off .shelf{display:none!important}
+
+  /* картка для «Поділитися» */
+  .sharecard{position:fixed;inset:0;z-index:50;width:1080px;height:1350px;overflow:hidden;
+    background:radial-gradient(60% 40% at 50% 38%, rgba(255,246,232,.16), transparent 70%),
+      radial-gradient(60% 30% at 15% 100%, rgba(10,60,32,.5), transparent 70%), var(--grass);
+    display:flex;flex-direction:column;align-items:center;text-align:center;padding:90px 90px 80px;color:var(--on-grass)}
+  .sharecard[hidden]{display:none}
+  .sc-kicker{font-size:30px;letter-spacing:.3em;text-transform:uppercase;font-weight:700}
+  .sc-kicker em{font-style:normal;color:var(--accent)}
+  .sc-shield{width:600px;margin:46px 0 30px;filter:drop-shadow(0 30px 40px rgba(8,40,20,.45));position:relative}
+  .sc-shield::before{content:"";position:absolute;inset:-22%;border-radius:50%;z-index:-1;
+    background:repeating-conic-gradient(rgba(255,246,232,.13) 0 8deg,transparent 8deg 22deg);
+    -webkit-mask:radial-gradient(circle,#000 35%,transparent 70%);mask:radial-gradient(circle,#000 35%,transparent 70%)}
+  .sc-title{font-size:84px;font-weight:800;letter-spacing:-.035em;line-height:1}
+  .sc-text{font-size:38px;line-height:1.3;margin-top:20px;max-width:24ch;opacity:.92;text-wrap:balance}
+  .sc-foot{margin-top:auto;display:flex;flex-direction:column;gap:8px;font-size:28px;opacity:.85}
+  .sc-foot b{font-size:32px;letter-spacing:.01em;opacity:1}
   .shelf-head #shelfNext{letter-spacing:.02em;text-transform:none;font-weight:600;font-size:clamp(13px,1vw,15px);opacity:.9}
   .shelf-row{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:clamp(4px,.6vw,10px);max-width:760px}
   .sh{position:relative}
@@ -216,7 +245,7 @@
 
   /* новий щит після вправи — замість кроків */
   .newbadge{display:flex;align-items:center;gap:clamp(16px,1.8vw,28px)}
-  .newbadge .big{width:clamp(110px,9.5vw,160px);flex:none;position:relative}
+  .newbadge .big{width:clamp(130px,12vw,200px);flex:none;position:relative}
   .newbadge .big .shield{animation:bigpop 1s cubic-bezier(.2,1.35,.4,1) both;filter:drop-shadow(0 14px 22px rgba(10,40,22,.45))}
   .newbadge .big::before{content:"";position:absolute;inset:-28%;border-radius:50%;
     background:repeating-conic-gradient(rgba(255,246,232,.22) 0 9deg,transparent 9deg 24deg);
@@ -737,13 +766,23 @@
 
     <!-- досягнення: щити під кнопками на старті й після вправи -->
     <div class="shelf" id="shelf" hidden>
-      <div class="shelf-head"><span id="shelfCount">Досягнення</span><span id="shelfNext"></span></div>
+      <div class="shelf-head"><span id="shelfCount">Досягнення</span>
+        <span class="shelf-right"><span id="shelfNext"></span><button class="mini" id="shelfHide" title="Сховати щити з екрана: нові теж не вискакуватимуть">Сховати</button></span></div>
       <div class="shelf-row" id="shelfRow"></div>
     </div>
   </div>
 </div>
 
-<div class="foot"><span id="footText">Сьогодні: 0</span><span class="dots" id="dots"></span></div>
+<!-- картка «Поділитися» (1080×1350): застосунок робить з неї PNG; перегляд — ?shot=card&id=streak-3 -->
+<div class="sharecard" id="sharecard" hidden>
+  <div class="sc-kicker">Потя<em>гусь</em> · досягнення</div>
+  <div class="sc-shield" id="scShield"></div>
+  <div class="sc-title" id="scTitle"></div>
+  <div class="sc-text" id="scText"></div>
+  <div class="sc-foot"><span>Гусь, який щогодини виганяє з-за столу</span><b>potyagus.alinauvarova.com</b></div>
+</div>
+
+<div class="foot"><span id="footText">Сьогодні: 0</span><span class="dots" id="dots"></span><button class="foot-link" id="shelfShow" hidden>Показати досягнення</button></div>
 <div class="clock" id="clock"></div>
 <div class="confetti" id="confetti"></div>
 <div class="bye" id="bye">
@@ -877,6 +916,7 @@ function render(){
   }
   $("footText").textContent = "Сьогодні розім'явся: " + DATA.todayCount + " / " + goal;
   renderShelf(false);
+  setBadgesHidden(!!DATA.badgesHidden, false);
 
 
   total = left = DATA.seconds;
@@ -939,7 +979,7 @@ function complete(){
   honk("done");
   confetti();
   const gotBadge = showNewBadge();
-  if (!SHOT) setTimeout(() => { if (!closing) finish("done"); }, gotBadge ? 7000 : 3200);   // час роздивитись щит
+  if (!SHOT) setTimeout(() => { if (!closing && !holdForShare) finish("done"); }, gotBadge ? 7000 : 3200);   // час роздивитись щит
 }
 
 function dndUntil(mins){
@@ -1005,26 +1045,42 @@ const EMBLEMS = {
                   <rect x="44" y="49" width="32" height="25" rx="5" fill="${CREAM}"/><circle cx="60" cy="60" r="3.6" fill="${c}"/>`
 };
 let shieldSeq = 0;
+// Малюнки гуся для щитів (згенеровані, прозорий фон) лежать у badges/<id>.png; без малюнка — емблема.
+const BADGE_ART = new Set(["first", "total-10", "streak-3", "early", "day-8", "streak-7", "variety", "total-100"]);
 function shieldSVG(b, locked, small){
-  const base = locked ? "#2F6B47" : (b.color || "#2F5BD3"), dark = locked ? "#245638" : shade(base, -.32);
-  const em = locked ? "lock" : (EMBLEMS[b.emblem] ? b.emblem : "star");    // невідома емблема → зірка
+  const base = locked ? "#2C6644" : (b.color || "#2F5BD3"), dark = locked ? "#1F5135" : shade(base, -.34);
   const id = "shc" + (++shieldSeq);
+  const art = BADGE_ART.has(b.id);
   // на полиці — лише число зі стрічки («100 вправ» → «100»), щоб читалось на маленькому щиті
   const full = (b.ribbon || "").toUpperCase();
   const ribbon = small ? (full.split(" ").find(w => /\d/.test(w)) || full) : full;
-  const fs = small ? (ribbon.length > 3 ? 22 : 26) : ribbon.length > 7 ? 11 : ribbon.length > 5 ? 12.5 : 14;
+  const fs = small ? (ribbon.length > 3 ? 21 : 25) : ribbon.length > 7 ? 11 : ribbon.length > 5 ? 12.5 : 14;
+  const inner = "M60 13 L101 26 V62 C101 90 81 107 60 117 C39 107 19 90 19 62 V26 Z";
+  const body = art
+    // малюнок не обрізаємо полем: штанга чи кубок можуть трохи заходити на обідок
+    ? `<g${locked ? ` filter="url(#${id}g)" opacity=".42"` : ""}><image href="badges/${b.id}.png" x="22" y="10" width="76" height="76"/></g>`
+    : `<g opacity="${locked ? .7 : 1}">${EMBLEMS[locked ? "lock" : (EMBLEMS[b.emblem] ? b.emblem : "star")](base)}</g>`;
   return `<svg class="shield" viewBox="-6 0 132 132" aria-hidden="true">
-    <defs><clipPath id="${id}"><path d="M60 14 L100 27 V62 C100 89 81 106 60 116 C39 106 20 89 20 62 V27 Z"/></clipPath></defs>
-    <path d="M60 5 L109 21 V62 C109 95 86 115 60 127 C34 115 11 95 11 62 V21 Z" fill="${dark}" ${locked ? `stroke="${CREAM}" stroke-opacity=".55" stroke-width="2.5"` : ""}/>
-    <path d="M60 14 L100 27 V62 C100 89 81 106 60 116 C39 106 20 89 20 62 V27 Z" fill="${base}"/>
-    <g clip-path="url(#${id})"><path d="M60 14 L20 27 V120 H60 Z" fill="#fff" opacity="${locked ? .04 : .13}"/></g>
-    <g opacity="${locked ? .7 : 1}">${EMBLEMS[em](base)}</g>
+    <defs>
+      <clipPath id="${id}"><path d="${inner}"/></clipPath>
+      <filter id="${id}g"><feColorMatrix type="saturate" values="0"/></filter>
+      <linearGradient id="${id}r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${shade(dark, .22)}"/><stop offset="1" stop-color="${shade(dark, -.18)}"/></linearGradient>
+    </defs>
+    <path d="M60 4 L110 20 V62 C110 96 86 116 60 128 C34 116 10 96 10 62 V20 Z" fill="url(#${id}r)" ${locked ? `stroke="${CREAM}" stroke-opacity=".5" stroke-width="2.5"` : ""}/>
+    <path d="${inner}" fill="${base}"/>
+    <g clip-path="url(#${id})">
+      <path d="M60 13 L19 26 V125 H60 Z" fill="#fff" opacity="${locked ? .04 : .12}"/>
+      <ellipse cx="60" cy="8" rx="58" ry="26" fill="#fff" opacity="${locked ? .03 : .10}"/>
+    </g>
+    <path d="${inner}" fill="none" stroke="#fff" stroke-opacity="${locked ? .08 : .28}" stroke-width="1.6"/>
+    ${body}
+    ${locked && art ? `<circle cx="96" cy="24" r="12" fill="${CREAM}"/><path d="M91.5 24 v-3 a4.5 4.5 0 0 1 9 0 v3" fill="none" stroke="${INK}" stroke-width="2.2"/><rect x="89.5" y="23" width="13" height="9.5" rx="2" fill="${INK}"/>` : ""}
     ${ribbon ? (() => {
-      // стрічка: на полиці вища й з більшою цифрою
-      const y0 = small ? 80 : 84, h = small ? 30 : 21, mid = y0 + h / 2, tail = shade(CREAM, -.14);
-      return `<path d="M-2 ${y0+4} H14 V${y0+h+4} H-2 L5 ${mid+4} Z" fill="${locked ? "#A9BFA9" : tail}"/>
-      <path d="M122 ${y0+4} H106 V${y0+h+4} H122 L115 ${mid+4} Z" fill="${locked ? "#A9BFA9" : tail}"/>
-      <rect x="6" y="${y0}" width="108" height="${h}" rx="3" fill="${locked ? "#C7D6C5" : CREAM}"/>
+      // стрічка: нижче за гуся; на полиці — вища й з більшою цифрою
+      const y0 = small ? 88 : 92, h = small ? 27 : 19, mid = y0 + h / 2, tail = shade(CREAM, -.16);
+      return `<path d="M-3 ${y0+5} H14 V${y0+h+5} H-3 L4 ${mid+5} Z" fill="${locked ? "#9DB59F" : tail}"/>
+      <path d="M123 ${y0+5} H106 V${y0+h+5} H123 L116 ${mid+5} Z" fill="${locked ? "#9DB59F" : tail}"/>
+      <rect x="5" y="${y0}" width="110" height="${h}" rx="3" fill="${locked ? "#C3D3C2" : CREAM}"/>
       <text x="60" y="${mid + fs * .35}" text-anchor="middle" font-size="${fs}" fill="${INK}">${ribbon}</text>`; })() : ""}
   </svg>`;
 }
@@ -1055,10 +1111,11 @@ function renderShelf(fresh){
 /* великий щит на кінцевому екрані вправи — замість кроків */
 function showNewBadge(){
   const list = Array.isArray(DATA.badges) ? DATA.badges : [];
-  if (!list.length) return false;
+  if (!list.length || DATA.badgesHidden) return false;     // щити сховано — нові теж не вискакують
   const b = list[0], box = $("newbadge");
   box.innerHTML = `<div class="big">${shieldSVG(b, false)}</div>
     <div><div class="k">${list.length > 1 ? "нові досягнення · " + list.length : "нове досягнення"}</div><h3></h3><p></p></div>`;
+  // TODO «Поділитися»: кнопку повернемо, коли застосунок навчиться робити PNG-картку і меню «Поділитися»
   box.querySelector("h3").textContent = list.map(x => x.title).join(" + ");
   box.querySelector("p").textContent = b.text;
   box.hidden = false;
@@ -1163,6 +1220,16 @@ document.querySelectorAll(".dnd").forEach(box => {
     e.stopPropagation(); finish("dnd", {minutes: Number(b.dataset.dnd)});
   });
 });
+/* сховати / показати щити; застосунок запам'ятовує вибір (showBadges у config.json) */
+let holdForShare = false;
+function setBadgesHidden(on, tell){
+  DATA.badgesHidden = on;
+  document.body.classList.toggle("badges-off", on);
+  $("shelfShow").hidden = !on || !(DATA.shelf || []).length;
+  if (tell) send("badges", {hidden: on});
+}
+$("shelfHide").onclick = e => { e.stopPropagation(); setBadgesHidden(true, true); };
+$("shelfShow").onclick = e => { e.stopPropagation(); setBadgesHidden(false, true); };
 document.addEventListener("click", e => {
   if (!e.target.closest(".dnd")) document.querySelectorAll(".dnd.open").forEach(b => b.classList.remove("open"));
 }, true);
@@ -1198,6 +1265,14 @@ if (!native && SHOT) {
   ];
   if (SHOT === "badge") { DATA.shelf[2].have = 2; DATA.badges = [DATA.shelf[2]]; }
 }
+if (SHOT === "card") {
+  const want = new URLSearchParams(location.search).get("id") || "streak-3";
+  const b = (DATA.shelf || []).find(x => x.id === want) || DATA.shelf[0];
+  document.querySelector(".stage").style.display = "none";
+  $("scShield").innerHTML = shieldSVG(b, false); $("scTitle").textContent = b.title; $("scText").textContent = b.text;
+  $("sharecard").hidden = false;
+}
+if (SHOT === "hidden") setTimeout(() => setBadgesHidden(true, false), 300);
 if (SHOT === "active" || SHOT === "done" || SHOT === "badge") setTimeout(() => {
   begin(); clearInterval(tick);
   left = 21; $("num").textContent = left; $("prog").style.strokeDashoffset = 2*Math.PI*44 * (left / total);

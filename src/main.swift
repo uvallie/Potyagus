@@ -52,6 +52,8 @@ struct Config {
     var showMenuBarIcon = true
     /// Exercise ids unticked in the menu-bar catalogue — the goose never picks these.
     var disabledExercises: [String] = []
+    /// Badge shelf on the overlay. «Сховати» flips it off; new badges then don't pop up either.
+    var showBadges = true
 
     static func load() -> Config {
         var c = Config()
@@ -72,6 +74,7 @@ struct Config {
         if let v = j["volume"]          as? Int  { c.volume = min(max(v, 0), 100) }
         if let v = j["showMenuBarIcon"] as? Bool { c.showMenuBarIcon = v }
         if let v = j["disabledExercises"] as? [String] { c.disabledExercises = v }
+        if let v = j["showBadges"]      as? Bool { c.showBadges = v }
         return c
     }
 }
@@ -804,7 +807,9 @@ final class Controller: NSObject, NSApplicationDelegate, NSMenuDelegate, WKScrip
             let wv = WKWebView(frame: NSRect(origin: .zero, size: screen.frame.size), configuration: conf)
             wv.navigationDelegate = self
             wv.setValue(false, forKey: "drawsBackground")
+            #if INSPECTABLE   // лише для налагодження: INSPECT=1 ./build.sh
             if wv.responds(to: Selector(("setInspectable:"))) { wv.setValue(true, forKey: "inspectable") }
+            #endif
 
             let win = makeWindow(on: screen)
             win.contentView = wv
@@ -878,7 +883,8 @@ final class Controller: NSObject, NSApplicationDelegate, NSMenuDelegate, WKScrip
             "goal":       cfg.goal,
             "volume":     Double(cfg.volume) / 100,
             "interval":   cfg.intervalMinutes,
-            "muted":      wv !== primaryWebView
+            "muted":      wv !== primaryWebView,
+            "badgesHidden": !cfg.showBadges
         ]
         let (shelf, unlocks) = badgePayload(lib.badges ?? [], exercise: current.id)
         if !shelf.isEmpty { payload["shelf"] = shelf }
@@ -893,6 +899,13 @@ final class Controller: NSObject, NSApplicationDelegate, NSMenuDelegate, WKScrip
     func userContentController(_ c: WKUserContentController, didReceive msg: WKScriptMessage) {
         guard let body = msg.body as? [String: Any],
               let action = body["action"] as? String else { return }
+        // Settings from the page don't end the nudge — handle them before the one-shot guard,
+        // or the overlay stops listening to «Готово» and sits on screen for good.
+        if action == "badges" {
+            saveConfigValue("showBadges", !((body["hidden"] as? Bool) ?? false))
+            return
+        }
+        guard ["dnd", "done", "skip", "ignored", "snooze"].contains(action) else { return }
         guard !handled else { return }
         handled = true
         switch action {
